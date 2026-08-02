@@ -1,0 +1,2790 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dars studio — сайты под рекламный трафик для ремонтных компаний</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- Модальное окно экспресс-аудита. Отдельным файлом, а не в общий <style>:
+     блок самодостаточный, все классы в пространстве .sa-*, переменные берёт
+     из :root ниже. -->
+<link rel="stylesheet" href="assets/css/site-audit.css">
+<style>
+/* =========================================================
+   РЕДАКЦИЯ 4 — весь сайт переведён на flow-вёрстку (реальные
+   px/vw/clamp), канва (1440 + transform:scale) убрана целиком.
+
+   Почему: канва даёт пиксель-точное повторение Figma-макета на
+   любой ширине экрана, но у нее два жёстких ограничения браузера —
+   overflow:hidden на канве ломает position:sticky у потомков,
+   transform на канве ломает position:fixed у потомков (fixed
+   внутри трансформированного предка считается не от вьюпорта).
+   Sticky (заголовок «Почему сайт не даёт заявок») и fixed (шапка)
+   были нужны — поэтому сначала эти два блока жили вне канвы
+   отдельными исключениями. Теперь по решению — вся канва снята,
+   единая техника по всему сайту: обычный поток, max-width+padding
+   на clamp(), типографика на clamp(). Взамен пиксель-точности —
+   нормальное непрерывное адаптивное поведение на любой ширине,
+   а не только на 1440/<720, как было раньше.
+   ========================================================= */
+
+/* =========================================================
+   СИСТЕМА БРЕЙКПОИНТОВ — 4 официальных порога на весь сайт:
+     1200px — шапка (компакт вместо полного меню/нава), стрелки
+              между карточками процесса
+     900px  — «Почему сайт не даёт заявок» (колонка вместо sticky-строки)
+     720px  — общий мобильный порог: hero, cta-strip, шапка (мобильный
+              вид), сетки кейсов/шагов/тарифов, brief, footer
+     450px  — самые мелкие телефоны: компакт-контакты, grid-5 → 1fr
+   Новые блоки ломать только по этим четырём значениям.
+   Точечные исключения — не часть общей системы, новых подобных без
+   необходимости не заводить. Каждый комментарий — на своём месте в файле:
+     1200–1440px — общее уменьшение контента на ~15% (ритм секций,
+                   заголовки, hero, карточки, пакеты, шаги процесса)
+     900–1200px  — заготовка под фоновое фото хиро вместо мокапа-планшета
+     720–900px   — hero: контент центрируется (мокапу тесно рядом с текстом)
+   ========================================================= */
+:root{
+  --color-white:#ffffff;
+  --color-black:#000000;
+  --color-accent:#c9f24d;
+  --color-surface:#f5f5f0;
+  --color-dark:#111111;
+  --color-card:#ffffff;
+
+  --glass-bg:rgba(255,255,255,.2);
+  --glass-blur:blur(10px);
+  --glass-dark-bg:rgba(0,0,0,.35);
+  --glass-dark-border:rgba(255,255,255,.12);
+
+  --border-light:rgba(0,0,0,.06);
+  --border-light-hv:rgba(0,0,0,.15);
+  --border-dark:rgba(255,255,255,.10);
+  --border-dark-hv:rgba(255,255,255,.25);
+
+  --muted-light:rgba(0,0,0,.7);
+  --muted-dark:rgba(255,255,255,.7);
+
+  --color-bad:#e5484d;
+  /* жёлтый для средних значений PageSpeed (50–89) — в шкале Google это
+     «требует улучшения», между красным и зелёным */
+  --color-warn:#d98c00;
+  --color-good:#3a9900;
+
+  --font-display:'Manrope',sans-serif;
+  --font-text:'Inter',sans-serif;
+
+  --radius-card:20px;
+  --radius-block:16px;
+  --radius-tile:14px;
+  --radius-pill:100px;
+  --radius-button:30px;
+
+  --ease-fast:.2s ease;
+  --ease-panel:.3s ease;
+
+  /* единый горизонтальный/вертикальный ритм секций — везде одна формула */
+  --pad-x: clamp(20px, 4.861vw, 70px);   /* 4.861vw = 70/1440*100, тот же % что был у канвы */
+  --pad-y: clamp(56px, 7vw, 100px);
+  /* горизонтальный паддинг тёмной/лаймовой карточки — вынесен в переменную,
+     чтобы бегущая строка могла выйти на него отрицательным margin
+     и дотянуться до самых краёв подложки */
+  --card-pad-x: clamp(22px, 4.4vw, 55px);
+  /* вертикальный паддинг лаймовой карточки — вынесен, чтобы лента
+     конкурентов могла выйти на него отрицательным margin и упереться
+     в верхний и нижний края самой подложки */
+  --card-pad-y: clamp(31px, 4.95vw, 62px);
+
+  /* к моменту, когда до этого блока доскроллили, шапка уже в состоянии
+     header-scrolled: top:30px + самая высокая её плашка (compact-head,
+     59px) = низ шапки на 89px. Плюс запас 27px, чтобы заголовок не
+     липнул к шапке впритык. Используется в sticky-заголовке «Проблем». */
+  --header-clear: 116px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+/* Якоря меню (#cases, #pricing, #faq, #about, #reviews) — id стоит не
+   на <section>, а на заголовке ВНУТРИ неё. У секции сверху свой
+   padding-top (--pad-y или свой clamp у .pricing/.faq), и если бы id
+   был на section, scroll-margin-top отсчитывался бы от верхней границы
+   паддинга — прыжок доезжал бы «под шапку», а заголовок оказывался ещё
+   ниже, на всю величину этого паддинга, отъедая полезное пространство
+   экрана. Поставив id на сам заголовок, получаем ровно нужный зазор —
+   от шапки до текста, без лишнего воздуха над ним. Исключение — #brief:
+   там frame--inset с padding-top:0, лишнего воздуха и так нет, а id
+   на самой секции нужен ещё и другим CSS-правилам (#brief.frame--inset
+   и т.п.), поэтому его не трогаем.
+   scroll-margin-top даёт браузеру нужный запас сверху при
+   scrollIntoView/переходе по якорю, чтобы фиксированная шапка не
+   перекрывала заголовок. Значение то же самое, что и везде на сайте
+   для отступа от шапки — --header-clear. */
+[id]{scroll-margin-top:var(--header-clear)}
+/* Блокируем нативное перетаскивание картинок мышью (иконка "взять
+   файл") по всему сайту разом, чтобы не расставлять это точечно
+   в каждом блоке. pointer-events:none отдаёт клики/драг родителю —
+   слайдеры и ссылки вокруг картинок продолжают работать как раньше. */
+img{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none;
+    pointer-events:none}
+html{overflow-y:scroll;scroll-behavior:smooth}
+/* уважаем системную настройку "меньше движения" — обычный мгновенный
+   скролл вместо анимированного */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+}
+/* overflow-x:clip, а НЕ hidden.
+   Тонкость спецификации: если overflow-x:hidden, то overflow-y:visible
+   принудительно вычисляется в auto — body становится скролл-контейнером,
+   и все sticky внутри перестают прилипать к скроллу страницы.
+   overflow-x:clip обрезает горизонтальный вылет так же, но скролл-контейнер
+   НЕ создаёт, поэтому overflow-y остаётся visible и sticky работает. */
+body{background:var(--color-surface);overflow-x:clip;font-family:var(--font-text)}
+img{display:block;max-width:100%}
+
+/* =========================================================
+   ЕДИНЫЙ КОНТЕЙНЕР СЕКЦИЙ (замена канвы)
+   Без max-width — тянутся на всю ширину экрана, как hero
+   (решение: не оставлять пустых полей-«ушей» по бокам на
+   широких мониторах, единое поведение для всего сайта).
+   .frame--flow  — светлые/обычные секции, паддинг --pad-x/--pad-y
+   .frame--inset — секции-карточки (тёмные/лаймовые), паддинг 20px по бокам
+   .frame--footer— футер, паддинг снизу меньше
+   ========================================================= */
+.frame--flow{width:100%;padding:var(--pad-y) var(--pad-x)}
+.frame--inset{width:100%;padding:0 20px var(--pad-y)}
+/* у брифа отступ снизу убран отдельно — иначе футер выше прижимать
+   к чёрному блоку не тронув остальные .frame--inset секции нельзя */
+#brief{padding-bottom:0}
+.frame--footer{width:100%;padding:30px var(--pad-x)}
+
+/* ============ HERO — flow, единая разметка на все ширины ============ */
+.hero-section{width:100%;padding:20px}
+/* высота 100% экрана (минус отступ 20px сверху/снизу от .hero-section) */
+.hero-card{position:relative;width:100%;min-height:calc(100vh - 40px);
+           border-radius:20px;overflow:hidden;
+           background:linear-gradient(135deg,#000000,#242424)}
+/* чуть крупнее прежнего и сдвинута правее (за край, обрезается overflow:hidden карточки) */
+.hero-card__img{position:absolute;right:-70px;top:50%;transform:translateY(-40%);width:clamp(620px,96vw,1360px);
+                 max-width:none;height:auto;display:block;opacity:.95}
+/* заготовка под фоновое фото 900–1200, см. комментарий у разметки —
+   оба элемента скрыты везде, кроме своего диапазона (ниже по файлу) */
+.hero-card__bg{position:absolute;inset:0;width:100%;height:100%;
+                object-fit:cover;display:none}
+.hero-card__overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none}
+.hero-card__content{position:relative;z-index:1;min-height:inherit;
+                     display:flex;flex-direction:column;justify-content:center;
+                     padding:clamp(64px,8.5vw,118px) clamp(20px,5vw,70px) clamp(36px,5vw,60px);
+                     color:#fff}
+
+.badge{font:400 clamp(14px,1.21vw,15px)/1.3 var(--font-text);opacity:.7;
+       margin-bottom:clamp(15px,1.76vw,22px)}
+.badge b{font-weight:900}
+
+.headline{font:500 clamp(40px,6.6vw,77px)/1.05 var(--font-display);letter-spacing:-.02em;
+          color:#fff;max-width:820px;margin-bottom:clamp(18px,2.2vw,29px)}
+.headline span{color:var(--color-accent)}
+
+.desc{font:400 clamp(17px,1.87vw,20px)/1.4 var(--font-text);opacity:.7;max-width:460px;
+      margin-bottom:clamp(26px,3.85vw,40px)}
+
+/* Бегущие слова в подзаголовке хиро.
+   .word-rotate — inline-block с overflow:hidden высотой в одну строку
+   (1.4em = line-height у .desc). Внутри — 5 span друг под другом обычным
+   потоком (последний — повтор первого слова, aria-hidden, нужен только
+   для бесшовной петли: после него анимация мгновенно перескакивает
+   на 0-й кадр нового цикла, а т.к. текст тот же — скачок не виден).
+   Все span получают одну и ту же анимацию — сдвигаясь синхронно,
+   они едут как единая колонка, и в окошко высотой 1.4em каждый раз
+   попадает только одно слово. 10s на 4 слова: 2s показ + 0.5s сдвиг
+   на каждое (проценты см. в keyframes). */
+.word-rotate{position:relative;display:inline-block;height:1.4em;overflow:hidden;
+             vertical-align:top}
+.word-rotate span{display:block;white-space:nowrap;animation:word-rotate 10s infinite}
+@keyframes word-rotate{
+  0%,20%{transform:translateY(0)}
+  25%,45%{transform:translateY(-1.4em)}
+  50%,70%{transform:translateY(-2.8em)}
+  75%,95%{transform:translateY(-4.2em)}
+  100%{transform:translateY(-5.6em)}
+}
+@media (prefers-reduced-motion: reduce){
+  .word-rotate span{animation:none}
+  .word-rotate span:not(:first-child){display:none}
+}
+
+@media (min-width: 721px) and (max-width: 900px) {
+  .desc{max-width:400px}
+}
+
+.hero-ctas{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:clamp(31px,4.4vw,48px)}
+.hero-cta{display:flex;flex-direction:column;gap:11px;min-width:190px}
+
+.btn-primary, .btn-ghost{
+  display:inline-flex; align-items:center; justify-content:center; width:fit-content;
+  height:57px; padding:0 33px; border-radius:29px; text-decoration:none;
+  white-space:nowrap; transition:background .2s, color .2s;
+}
+.btn-primary{background:#fff;color:#000;font:500 18px/1 var(--font-display);letter-spacing:-.35px}
+.btn-primary:hover{background:var(--color-accent)}
+.btn-ghost{background:rgba(255,255,255,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+           color:#fff;font:500 18px/1 var(--font-display);letter-spacing:-.35px}
+.btn-ghost:hover{color:var(--color-accent)}
+
+/* margin-left, а не padding: сноска должна сдвинуться целиком,
+   выровнявшись по тексту внутри кнопки над ней */
+.cap{font:400 13px/1.3 var(--font-text);color:rgba(255,255,255,.7);
+     max-width:190px;margin-left:10px}
+.cap b{font-weight:500;color:rgba(255,255,255,.9)}
+
+
+/* ============ ГЛОБАЛЬНАЯ ШАПКА (fixed) — без изменений в этой правке ============ */
+.site-header{display:contents}
+
+.brand { position:fixed; top:43px; left:70px; z-index:1001;
+         display: flex; align-items: center; gap: 14px; cursor: pointer;
+         height: 51px; padding: 0 24px 0 0; border-radius: 100px;
+         background: rgba(255,255,255,.2);
+         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+         transition: background .3s, border-color .3s, top .35s ease; }
+.brand__avatar { width: 51px; height: 51px; border-radius: 50%; object-fit: cover; display: block; }
+.brand__name { color: #fff; white-space: nowrap; transition: color .2s;
+               font: 500 25px/1 'Manrope', sans-serif; letter-spacing: -.49px; }
+.brand:hover .brand__name { color: #c9f24d; }
+
+body.header-on-light .brand,
+body.header-on-light .nav,
+body.header-on-light .compact-head .contact-pill,
+body.header-on-light .burger {
+  background: var(--glass-dark-bg);
+  border: 1px solid var(--glass-dark-border);
+}
+
+body.header-scrolled .brand,
+body.header-scrolled .nav,
+body.header-scrolled .site-header__actions {
+  top: 10px;
+}
+
+.site-header__actions{ position:fixed; top:43px; right:70px; z-index:1001;
+                        display:flex; align-items:center; gap:18px;
+                        transition: top .35s ease; }
+
+.contact { display: flex; align-items: center; height: 51px; padding: 0 28px;
+           border-radius: 100px; background: #c9f24d; color: #000; text-decoration: none;
+           white-space: nowrap; font: 500 18px/1 'Manrope', sans-serif; letter-spacing: -.37px;
+           transition: opacity .2s; }
+.contact:hover { opacity: .85; }
+
+.tg-btn { width: 51px; height: 51px; border-radius: 50%; background: #c9f24d;
+          display: flex; align-items: center; justify-content: center;
+          position: relative; overflow: hidden; flex-shrink:0; }
+.tg-btn__icon { position: absolute; top: 50%; left: 50%; width: 21px; height: 21px;
+                display: block; filter: brightness(0);
+                transition: transform .45s cubic-bezier(.4,0,.2,1), opacity .35s ease; }
+.tg-btn__icon--a { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+.tg-btn__icon--b { transform: translate(-190%, 190%) rotate(-25deg); opacity: 0; }
+.tg-btn:hover .tg-btn__icon--a { transform: translate(190%, -190%) rotate(25deg); opacity: 0; }
+.tg-btn:hover .tg-btn__icon--b { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+
+.nav { position:fixed; top:43px; left:50%; transform:translateX(-50%); z-index:1001;
+       display: flex; align-items: center; height: 51px; padding: 0 37px; border-radius: 100px;
+       background: rgba(255,255,255,.2);
+       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+       transition: background .3s, border-color .3s, top .35s ease;
+       gap: 24px; color: #fff; white-space: nowrap;
+       font: 500 18px/1 'Manrope', sans-serif; letter-spacing: -.37px; }
+.nav a, .btn-ghost { color: #fff; text-decoration: none; }
+.nav a:hover, .btn-ghost:hover { color: #c9f24d; }
+
+.compact-head { display: none; align-items: center; gap: 14px; }
+.compact-head .contact-pill {
+  display: inline-flex; align-items: center; height: 59px; padding: 0 32px;
+  border-radius: 100px; background: rgba(255,255,255,.2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: background .3s, border-color .3s, color .2s;
+  color: #fff; text-decoration: none; white-space: nowrap;
+  font: 500 21px/1 'Manrope', sans-serif; letter-spacing: -.43px;
+}
+.compact-head .contact-pill:hover { color: #c9f24d; }
+
+.mobile__brand { display: none; }
+.mobile__head-right { display: none; }
+
+.burger {
+  display: flex; align-items: center; justify-content: center;
+  width: 59px; height: 59px; border-radius: 50%; border: 0; cursor: pointer;
+  background: rgba(255,255,255,.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: background .3s, border-color .3s;
+}
+.burger--sm { width: 53px; height: 53px; }
+.burger__lines { position: relative; width: 24px; height: 16px; }
+.burger__lines span { position: absolute; left: 0; width: 24px; height: 2px; background: #fff;
+                       border-radius: 2px; transition: transform .2s, opacity .2s; }
+.burger__lines span:nth-child(1) { top: 0; }
+.burger__lines span:nth-child(2) { top: 7px; }
+.burger__lines span:nth-child(3) { top: 14px; }
+.burger.is-open .burger__lines span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.is-open .burger__lines span:nth-child(2) { opacity: 0; }
+.burger.is-open .burger__lines span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.mobile-menu { display: none; position: fixed; inset: 0; z-index: 1000;
+               flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+               border-radius: 0; background: rgba(0,0,0,.35);
+               border: 0;
+               backdrop-filter: blur(24px) saturate(140%); -webkit-backdrop-filter: blur(24px) saturate(140%);
+               opacity: 0; transform: translateX(100%); pointer-events: none;
+               transition: opacity .3s ease, transform .3s ease; }
+.mobile-menu.is-open { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.mobile-menu a { padding: 10px 24px; border-radius: 14px; color: #fff; text-decoration: none;
+                 font: 500 44px/1.1 'Manrope', sans-serif; letter-spacing: -.02em; }
+.mobile-menu a:hover { background: rgba(255,255,255,.1); color: #c9f24d; }
+
+/* =========================================================
+   ОБЩИЕ КОМПОНЕНТЫ КОНТЕНТА (+10% ко всем размерам/отступам
+   относительно предыдущей редакции)
+   ========================================================= */
+.h2{font:500 clamp(35px,5.72vw,77px)/1.08 var(--font-display);letter-spacing:-.02em;color:var(--color-black)}
+.h2--lg{font-size:clamp(37px,6.16vw,77px);line-height:1.05}
+.h2--light{color:var(--color-white)}
+.lead{font:400 clamp(17px,1.87vw,20px)/1.3 var(--font-text);color:rgba(0,0,0,.7);margin-top:22px}
+.lead--dark{color:rgba(255,255,255,.7)}
+.note{font:400 18px/1.55 var(--font-text);color:var(--muted-light)}
+.note--dark{color:rgba(255,255,255,.7)}
+
+.card-dark{background:var(--color-dark);border-radius:var(--radius-card);
+           padding:clamp(35px,6.6vw,88px) var(--card-pad-x);overflow:hidden}
+.card-lime{background:var(--color-accent);border-radius:var(--radius-card);
+           padding:var(--card-pad-y) var(--card-pad-x);overflow:hidden}
+.card{background:var(--color-card);border:1px solid var(--border-light);
+      border-radius:var(--radius-block);transition:border-color var(--ease-fast)}
+.card:hover{border-color:var(--border-light-hv)}
+/* плашка статистики "обо мне" — не карточка-ссылка, ховер здесь не нужен */
+.about__stats:hover{border-color:var(--border-light)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;height:57px;padding:0 33px;
+     border-radius:var(--radius-pill);text-decoration:none;white-space:nowrap;
+     font:500 18px/1 var(--font-display);transition:background var(--ease-fast),color var(--ease-fast),opacity var(--ease-fast);border:0;cursor:pointer}
+.btn--black{background:var(--color-black);color:var(--color-white)}
+.btn--black:hover{opacity:.8}
+.btn--lime{background:var(--color-accent);color:var(--color-dark)}
+.btn--lime:hover{opacity:.85}
+.btn--dark{background:var(--color-dark);color:var(--color-white)}
+.btn--dark:hover{opacity:.85}
+
+/* ---- 02 ПРОБЛЕМЫ ----
+   Flexbox, а не Grid — у sticky внутри CSS Grid есть известные
+   баги в некоторых браузерах (особенно старых Safari), на Flexbox
+   этот приём (пустой растянутый родитель + sticky-потомок внутри)
+   работает надёжнее и обкатан годами. align-items не задаём —
+   дефолтный stretch растягивает .problems2__head на высоту
+   .problems2__cards, это и даёт sticky «место для манёвра». */
+.problems2__inner{display:flex;gap:44px}
+.problems2__head{flex:0 0 42%;min-width:280px}
+.problems2__head-inner{position:sticky;top:var(--header-clear)}
+.problems2__cards{flex:1;display:flex;flex-direction:column;gap:26px;min-width:0}
+/* двухуровневая карточка. Grid из двух колонок: номер висит слева
+   отдельной колонкой, заголовок и описание идут во второй — так
+   описание выравнивается ровно под заголовком, а не под номером.
+   align-items:baseline сажает номер на базовую линию заголовка,
+   несмотря на разные кегли. */
+.problem-card{padding:clamp(24px,2.9vw,36px) clamp(22px,3.2vw,40px);
+              display:grid;grid-template-columns:auto 1fr;
+              column-gap:clamp(12px,1.3vw,16px);row-gap:10px;align-items:baseline}
+/* без ховера: перебиваем общий .card:hover (специфичность та же,
+   правило ниже по файлу — значит выигрывает) */
+.problem-card:hover{border-color:var(--border-light)}
+.problem__num{grid-column:1;grid-row:1;font-variant-numeric:tabular-nums;
+              font:700 clamp(19px,2vw,26px)/1.25 var(--font-display);
+              letter-spacing:-.01em;color:rgba(0,0,0,.7)}
+.problem__title{grid-column:2;grid-row:1;
+                font:500 clamp(20px,2.2vw,29px)/1.25 var(--font-display);
+                letter-spacing:-.015em;color:var(--color-black)}
+.problem__text{grid-column:2;grid-row:2;
+               font:400 clamp(16px,1.5vw,19px)/1.5 var(--font-text);color:rgba(0,0,0,.7)}
+
+@media (max-width: 900px) {
+  .problems2__inner{flex-direction:column;gap:32px}
+  .problems2__head-inner{position:static}
+}
+
+/* Раньше здесь было отдельное исключение 721–900px, центрирующее
+   контент хиро (картинка-планшет казалась тесной рядом с текстом).
+   По просьбе — убрано: в этом диапазоне контент теперь как везде,
+   по левому краю (наследует обычные правила .hero-card__content). */
+
+/* ИСКЛЮЧЕНИЕ — диапазон 721–900. Шапка (.brand слева, .site-header__actions
+   справа — в этом окне там компакт-версия: contact-pill + burger, см.
+   @media max-width:1200) везде висит на фиксированных 70px от края
+   окна, а не от контентной части — тот же отступ, что и у контента,
+   задаёт --pad-x, но он на 900px это уже ~44px, на 720px — ~35px.
+   Получается, что шапка заметно "гуляет" наружу за левый/правый край
+   остального контента (кроме <720, там свой мобильный .site-header уже
+   стоит на var(--pad-x)). Сажаем шапку на var(--pad-x) и здесь —
+   ровно по контентной части, как везде. */
+@media (min-width:721px) and (max-width:900px) {
+  .brand{left:var(--pad-x)}
+  .site-header__actions{right:var(--pad-x)}
+}
+
+/* ИСКЛЮЧЕНИЕ — диапазон ≤1200. Заготовка под фоновое фото хиро,
+   см. комментарии у .hero-card__bg/.hero-card__overlay в CSS и у
+   разметки хиро: мокап-планшет прячем, вместо него — фото на всю
+   подложку под тёмным оверлеем (сейчас заглушка вместо реального фото).
+   Было 721–1200 — расширили вниз до самых маленьких экранов (320px),
+   фото теперь на всём диапазоне ≤1200, мокап остаётся только на
+   десктопе (>1200). */
+@media (max-width:1200px) {
+  .hero-card__img{display:none}
+  .hero-card__bg{display:block}
+  .hero-card__overlay{display:block}
+}
+
+.tools__title{max-width:1000px;margin-bottom:clamp(31px,4.4vw,53px)}
+/* ---- 03 ИНСТРУМЕНТЫ (бегущая строка) ----
+   Все карточки одного размера, лента едет влево линейно и бесконечно.
+   Бесшовность: в треке лежат ДВЕ одинаковые группы карточек. Как только
+   сдвиг доходит до ширины одной группы, координата возвращается на эту
+   же ширину назад — вторая группа в этот момент стоит ровно там, где
+   была первая, поэтому шва не видно.
+   Отступ между карточками задан не gap'ом трека, а padding-right у
+   группы — иначе зазор между группами не совпал бы с зазором внутри
+   группы и лента дёргалась бы на стыке. */
+/* отрицательные margin'ы ровно на паддинг карточки — лента выходит
+   за него и идёт до самых краёв тёмной подложки. Скругление углов
+   режется overflow:hidden у самой .card-dark */
+.slider{position:relative;overflow:hidden;
+        cursor:grab;user-select:none;-webkit-user-select:none;
+        /* pan-y: вертикальный скролл страницы пальцем остаётся за браузером,
+           горизонтальные жесты забираем себе под drag */
+        touch-action:pan-y;
+        margin-left:calc(-1 * var(--card-pad-x));
+        margin-right:calc(-1 * var(--card-pad-x))}
+.slider.is-dragging{cursor:grabbing}
+/* движение задаётся из JS (см. блок 3 в скрипте), а не CSS-анимацией:
+   при смене animation-duration браузер пересчитывает прогресс от новой
+   длительности, и лента скачком прыгает в другую точку — поэтому
+   ускорение при наведении на CSS сделать без рывка нельзя */
+.slider__track{display:flex;width:max-content;will-change:transform}
+.slider__group{display:flex;gap:24px;padding-right:24px}
+/* уважаем системную настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce){
+  .slider{overflow-x:auto}
+}
+
+/* padding:0 — отступы внутри __body, чтобы серая плашка-заглушка
+   под фото шла во всю ширину карточки, без полей по бокам.
+   overflow:hidden — обрезает её верхние углы по радиусу карточки.
+   min-height, а не height: раньше карточка была строго 352px, а
+   .tool-card__media — flex:0 0 50% от этой высоты. Ширина карточки
+   на разных брейкпоинтах/экранах меняется (flex-basis по ширине
+   плюс JS на мобильном), а текст в .tool-card__desc — нет: при более
+   узкой карточке он переносится на больше строк и не помещается
+   в оставшиеся 176px тела карточки, overflow:hidden их просто обрезал.
+   min-height задаёт МИНИМУМ, а не жёсткий потолок — если тексту нужно
+   больше места, карточка становится выше, а не обрезает контент. */
+.tool-card{flex:0 0 308px;min-height:352px;padding:0;overflow:hidden;
+           border-radius:var(--radius-card);background:#1c1c1c;
+           border:1.5px solid rgba(255,255,255,.08);user-select:none;
+           display:flex;flex-direction:column}
+/* заглушка под фото: раньше flex:0 0 50% (в долях от высоты карточки) —
+   при min-height вместо height высота карточки стала не всегда
+   определена заранее, а проценты для flex-basis по кросс-направлению
+   внутри flex-column считаются от НЕЁ; без явной height проценты
+   не резолвятся браузером (это привело бы к схлопыванию заглушки
+   в 0). Поэтому здесь фиксированный px, равный прежним 50% от 352px. */
+.tool-card__media{flex:0 0 176px;width:100%;background:rgba(255,255,255,.09)}
+.tool-card__media img{width:100%;height:100%;object-fit:cover;display:block}
+.tool-card__body{flex:1;padding:24px;display:flex;flex-direction:column;justify-content:flex-start}
+.tool-card__name{font:500 20px/1.2 var(--font-display);color:var(--color-white);margin-bottom:9px}
+.tool-card__desc{font:400 17px/1.4 var(--font-text);color:var(--muted-dark)}
+/* подпись под лентой: по центру, белым, с увеличенным отступом сверху */
+.tools__note{margin:clamp(40px,4.4vw,58px) auto 0;max-width:760px;
+             text-align:center;color:var(--color-white)}
+
+/* стрелки мобильного слайдера инструментов — скрыты по умолчанию,
+   на десктопе/планшете лента бежит сама (см. блок 3 в скрипте).
+   Показываются только в мобильном медиа-запросе (≤720px).
+   Сама кнопка .tools-arrow — невидимая зона тапа: во всю высоту слайда
+   и пошире (56px), но без фона/тени, только hit-area. Видимая стеклянная
+   стрелка — это ::before, отдельный маленький кружок 44px по центру
+   зоны тапа (position:absolute + translate, не завязан на размер
+   кнопки). Тот же приём, что у .glass-pill в дизайн-системе (blur
+   вместо сплошной заливки) + тень, чтобы кружок не терялся поверх
+   фото карточки на любом фоне.
+   Стрелки теперь зациклены (авто-свайп + свайп/клик по кругу, см. JS) —
+   отдельного :disabled-состояния на краях больше нет.
+   Кружок и шеврон сдвинуты на 50px выше геометрического центра
+   (top:calc(50% - 50px) вместо 50%) — по запросу, правка в 2 захода
+   (сначала 20px, потом ещё +30px).
+   Сам глиф ‹/› убрали из разметки — на разных шрифтах он рисуется
+   неровно (не по центру своего же боундинг-бокса, у части шрифтов
+   вообще с небольшим наклоном) и выглядел «кривым». Вместо текста —
+   ::after: квадрат 7×7 повёрнутый на 45°, у которого закрашены только
+   два смежных бордера — классический CSS-шеврон, пиксель-в-пиксель
+   одинаковый у обеих стрелок и не зависит от шрифта. */
+.tools-arrow{position:absolute;top:0;bottom:0;width:56px;z-index:3;
+             border:none;cursor:pointer;background:transparent;
+             display:none;
+             transition:opacity var(--ease-fast)}
+.tools-arrow--prev{left:0}
+.tools-arrow--next{right:0}
+.tools-arrow::before{content:'';position:absolute;top:calc(50% - 50px);left:50%;
+             transform:translate(-50%,-50%);z-index:-1;
+             width:44px;height:44px;border-radius:50%;
+             background:rgba(255,255,255,.16);
+             backdrop-filter:blur(10px) saturate(140%);
+             -webkit-backdrop-filter:blur(10px) saturate(140%);
+             box-shadow:0 8px 20px rgba(0,0,0,.28);
+             transition:background var(--ease-fast)}
+.tools-arrow::after{content:'';position:absolute;top:calc(50% - 50px);left:50%;
+             width:7px;height:7px;border-style:solid;border-color:transparent;
+             border-width:2.5px}
+.tools-arrow--prev::after{border-left-color:var(--color-black);
+             border-bottom-color:var(--color-black);
+             transform:translate(-30%,-50%) rotate(45deg)}
+.tools-arrow--next::after{border-right-color:var(--color-black);
+             border-top-color:var(--color-black);
+             transform:translate(-70%,-50%) rotate(45deg)}
+.tools-arrow:hover::before{background:rgba(255,255,255,.26)}
+
+/* точки пагинации под слайдером инструментов — активная залита белым,
+   неактивные — только белая обводка, без заливки. Скрыты по умолчанию,
+   показываются вместе со стрелками в мобильном медиа-запросе. */
+.tools-dots{display:none;justify-content:center;gap:8px;margin-top:16px}
+.tools-dots button{width:8px;height:8px;padding:0;border-radius:50%;cursor:pointer;
+             border:1.5px solid var(--color-white);background:none;
+             transition:background var(--ease-fast)}
+.tools-dots button.is-active{background:var(--color-white)}
+
+/* ---- 04 КЕЙСЫ ---- */
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+/* flex-колонка + margin-top:auto у метрик — карточки в ряду одной высоты
+   (это даёт grid), а метрики внутри прижаты к низу, поэтому при разной
+   длине описания цифры всё равно стоят на одной линии */
+.case{overflow:hidden;display:flex;flex-direction:column;
+      transition:transform .35s cubic-bezier(.4,0,.2,1),
+                 border-color var(--ease-panel),
+                 box-shadow .35s cubic-bezier(.4,0,.2,1)}
+.case__media{position:relative;height:clamp(260px,23vw,340px);background:rgba(0,0,0,.1);flex-shrink:0}
+.case__media img{width:100%;height:100%;object-fit:cover;
+                 transition:transform .6s cubic-bezier(.2,0,.2,1)}
+/* ХОВЕР: карточка чуть приподнимается с мягкой тенью, фото наезжает
+   зумом. overflow:hidden у .case обрезает зум по скруглению.
+   Зум медленнее подъёма (.6s против .35s) — так движение читается
+   как «фото оживает», а не как рывок всей карточки.
+   @media (hover:hover) — чтобы на тач-устройствах эффект не залипал после тапа */
+@media (hover: hover) {
+  .case:hover{transform:translateY(-6px);
+              border-color:var(--border-light-hv);
+              box-shadow:0 18px 40px -20px rgba(0,0,0,.28)}
+  .case:hover .case__media img{transform:scale(1.06)}
+}
+.case__tags{position:absolute;left:14px;top:14px;display:flex;gap:9px}
+.tag{font:500 13px/1 var(--font-display);padding:9px 15px;border-radius:var(--radius-pill)}
+.tag--glass{background:rgba(0,0,0,.6);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.tag--lime{background:var(--color-accent);color:var(--color-black)}
+.case__body{padding:28px;flex:1;display:flex;flex-direction:column}
+.case__title{font:500 clamp(20px,1.9vw,25px)/1.25 var(--font-display);letter-spacing:-.015em;
+             color:var(--color-black);margin-bottom:12px}
+.case__desc{font:400 17px/1.45 var(--font-text);color:rgba(0,0,0,.7);margin-bottom:26px}
+.case__metrics{display:flex;gap:30px;margin-top:auto}
+.metric__label{font:400 13px/1.3 var(--font-text);color:rgba(0,0,0,.7);margin-bottom:4px}
+.metric__value{font:700 28px/1 var(--font-display)}
+.metric__value--bad{color:var(--color-bad)}
+.metric__value--warn{color:var(--color-warn)}
+.metric__value--good{color:var(--color-good)}
+/* кнопка под метриками: сама карточка ужe даёт нужный отступ сверху
+   через .case__metrics{margin-top:auto}, здесь только зазор от цифр
+   и уменьшенный (относительно общего .btn 57px) размер под карточку */
+.case__cta{margin-top:24px;width:100%;height:46px;padding:0 26px;font-size:15px}
+
+/* ---- 04.1 КЕЙСЫ: 721–900px, точечное исключение (по аналогии с 09.1) ----
+   .grid-3 (3 узкие колонки, тот же класс, что у тарифов) на 721–900px
+   сжимает карточку кейса — картинка сверху высотой clamp(260–340px)
+   при узкой колонке смотрится непропорционально крупной. Разворачиваем
+   в горизонтальные плашки: один столбец на всю ширину, картинка слева
+   фиксированной шириной на всю высоту карточки (stretch — высоту
+   даёт .case__body своим содержимым), текст и метрики справа.
+   Блок должен идти ПОСЛЕ базовых .case{...} выше (см. комментарий
+   в аналогичном фиксе для .brief — иначе более поздний по каскаду
+   базовый .case{flex-direction:column} перебьёт row здесь). */
+@media (min-width: 721px) and (max-width: 900px) {
+  .cases .grid-3{grid-template-columns:1fr;gap:20px}
+  .case{flex-direction:row;align-items:stretch}
+  .case__media{flex:0 0 260px;height:auto}
+  .case__media img{height:100%}
+  .case__body{flex:1 1 auto;min-width:0}
+}
+
+/* ---- 02.5 CTA-ПОЛОСА (копия блока «Отличие», узкий вариант) ----
+   Порядок в разметке: сначала заголовок, потом кнопка — заголовок
+   слева, кнопка справа. */
+.cta-strip{display:flex;align-items:center;justify-content:space-between;gap:32px;
+           padding-top:clamp(16px,1.7vw,22px);padding-bottom:clamp(16px,1.7vw,22px)}
+.cta-strip__title{font-size:clamp(19px,2.1vw,28px);line-height:1.15;
+                  text-align:left;max-width:620px}
+/* кнопка вдвое шире: своя ширина была 205px (текст 139 + паддинги 66),
+   поэтому задаём min-width 410px явно. Удвоение паддинга тут не годится —
+   ширина текста не меняется, и кнопка выросла бы всего в 1.3 раза */
+.cta-strip .btn{min-width:410px;flex-shrink:0}
+
+/* увеличенный отступ снизу — там, где светлая секция упирается
+   в тёмный или лаймовый блок и обычного --pad-y между ними мало */
+.pad-bottom-lg{padding-bottom:clamp(90px,11vw,160px)}
+
+/* ---- 05 ОТЛИЧИЕ ----
+   Колонки не равные: правая шире в 1.6 раза. Правый край ленты —
+   по контентной части карточки. */
+.diff{display:grid;grid-template-columns:1fr 1.6fr;gap:clamp(16px,1.6vw,26px);
+      align-items:start;position:relative}
+.diff__title{max-width:540px}
+.diff__lead{font:400 clamp(17px,1.87vw,20px)/1.3 var(--font-text);color:rgba(0,0,0,.7);
+            max-width:410px;margin-top:22px;margin-bottom:35px}
+.diff__row{display:flex;flex-direction:row;align-items:center;gap:10px}
+.diff__note{font:400 14px/1.3 var(--font-text);color:rgba(0,0,0,.7)}
+
+/* ВЕРТИКАЛЬНАЯ БЕСКОНЕЧНАЯ ЛЕНТА (тот же приём, что у инструментов
+   в блоке 3, только по вертикали).
+   Бесшовность: в треке лежат ДВЕ одинаковые группы скриншотов. Когда
+   сдвиг доходит до высоты одной группы, координата возвращается на эту
+   же высоту назад — вторая группа в этот момент стоит ровно там, где
+   была первая, поэтому шва не видно.
+   Зазор между скриншотами задан не gap'ом трека, а padding-bottom у
+   группы — иначе расстояние между группами не совпало бы с расстоянием
+   внутри группы и лента дёргалась бы на стыке. */
+/* Лента стоит по контентной части карточки ПО ГОРИЗОНТАЛИ, но по
+   вертикали выходит отрицательным margin на её паддинг — верх и низ
+   окна совпадают с краями зелёной подложки, поэтому скриншоты
+   срезаются именно ею, без промежуточной рамки внутри блока.
+   Из-за этого высота окна = высота всей карточки: паддинг сверху и
+   снизу компенсируется отрицательными margin. */
+.diff__slider{margin-top:calc(-1 * var(--card-pad-y));
+              margin-bottom:calc(-1 * var(--card-pad-y))}
+.diff__viewport{height:clamp(380px,44vw,720px)}
+.diff__track{display:flex;flex-direction:column;will-change:transform}
+.diff__group{display:flex;flex-direction:column;gap:20px;padding-bottom:20px}
+/* height:auto ОБЯЗАТЕЛЕН рядом с атрибутами width/height в разметке:
+   иначе атрибут height=1940 применяется как реальная высота и
+   перебивает aspect-ratio — картинки вытягиваются по вертикали.
+   Сами атрибуты нужны, чтобы браузер знал пропорцию до загрузки:
+   без этого скрипт замеряет почти нулевую высоту группы и лента
+   едет рывками. */
+.diff__shot{display:block;width:100%;height:auto;aspect-ratio:3360/1940;
+            object-fit:cover;border-radius:12px;
+            box-shadow:0 18px 40px -24px rgba(0,0,0,.45)}
+
+/* пагинация: активная точка с чёрной заливкой, неактивные — только обводка.
+   Раньше .diff__dots позиционировалась относительно .diff__slider —
+   а высота слайдера ≈ высота окна со скриншотами (.diff__viewport,
+   clamp 380–720px), не высота всей плашки. Если левая колонка (текст)
+   оказывалась выше этого окна, точки центрировались по своей короткой
+   рамке и визуально "уезжали" от центра всей зелёной подложки.
+   Убрали position:relative у .diff__slider (это была единственная
+   причина, почему она была позиционирующим предком) — теперь
+   ближайший relative-предок это .diff целиком, и top:50% берёт
+   высоту всей плашки. right пересчитан под новую систему координат:
+   .diff — это сам .card-lime с паддингом card-pad-x, то есть его
+   padding-box (= контекст для right) это уже истинный внешний край
+   подложки, а не край контента — поэтому раньше было "минус половина
+   паддинга наружу", теперь просто "половина паддинга внутрь". */
+.diff__dots{position:absolute;z-index:2;top:50%;transform:translateY(-50%);
+            right:calc(var(--card-pad-x) / 2 - 4.5px);
+            display:flex;flex-direction:column;gap:9px}
+.diff__dots button{width:9px;height:9px;border-radius:50%;padding:0;cursor:pointer;
+                   border:1.5px solid var(--color-black);background:transparent;
+                   transition:background var(--ease-panel),transform var(--ease-panel)}
+.diff__dots button:hover{transform:scale(1.3)}
+.diff__dots button.is-active{background:var(--color-black)}
+
+@media (prefers-reduced-motion: reduce){
+  .diff__viewport{overflow-y:auto}
+}
+
+/* ---- 06 ОТЗЫВЫ (слайдер) ----
+   Построен на нативном горизонтальном скролле + scroll-snap, а не на
+   transform-треке: так на тач-устройствах бесплатно работает инерция
+   и «резинка» системы, а стрелки просто вызывают scrollBy.
+   Отрицательные margin по бокам + такой же padding — чтобы крайние
+   карточки при скролле уходили под самый край экрана, а в покое
+   стояли по общей сетке секции. */
+.reviews__head{display:flex;align-items:flex-end;justify-content:space-between;
+               gap:24px;margin-bottom:44px}
+.reviews__nav{display:flex;gap:12px;flex-shrink:0}
+.rev-arrow{width:52px;height:52px;border-radius:50%;flex-shrink:0;
+           border:1px solid var(--border-light-hv);background:none;
+           color:var(--color-black);font-size:19px;cursor:pointer;
+           display:flex;align-items:center;justify-content:center;
+           transition:background var(--ease-fast),color var(--ease-fast),
+                      border-color var(--ease-fast),opacity var(--ease-fast)}
+.rev-arrow:hover{background:var(--color-black);color:var(--color-white);
+                 border-color:var(--color-black)}
+.rev-arrow:disabled{opacity:.25;cursor:default}
+.rev-arrow:disabled:hover{background:none;color:var(--color-black);
+                          border-color:var(--border-light-hv)}
+
+.reviews{display:flex;gap:22px;overflow-x:auto;overflow-y:hidden;
+         scroll-snap-type:x mandatory;scroll-behavior:smooth;
+         scrollbar-width:none;-ms-overflow-style:none;
+         cursor:grab;
+         margin-inline:calc(-1 * var(--pad-x));
+         padding:2px var(--pad-x) 6px;
+         /* обязательно вместе с padding-inline: без scroll-padding браузер
+            считает точку прилипания от края области прокрутки и при загрузке
+            сам отматывает ленту на величину паддинга (scrollLeft=70 вместо 0) */
+         scroll-padding-inline:var(--pad-x)}
+.reviews::-webkit-scrollbar{display:none}
+/* во время перетаскивания снимаем snap и плавность — иначе браузер
+   борется с нами за позицию скролла и лента дёргается */
+.reviews.is-dragging{cursor:grabbing;scroll-behavior:auto;scroll-snap-type:none}
+
+.review{flex:0 0 clamp(290px,31.5%,430px);scroll-snap-align:start;
+        padding:34px;display:flex;flex-direction:column;user-select:none}
+.review__stars{color:var(--color-accent);font-size:17px;letter-spacing:4px;
+               margin-bottom:20px;line-height:1}
+.review__quote{font:500 clamp(18px,1.7vw,21px)/1.5 var(--font-display);
+               letter-spacing:-.01em;color:var(--color-black);margin-bottom:28px}
+.review__foot{display:flex;align-items:center;gap:14px;margin-top:auto}
+/* аватар: пока заглушка с инициалами. Если положить внутрь <img>,
+   он перекроет инициалы и обрежется по кругу через object-fit */
+.review__avatar{width:54px;height:54px;border-radius:50%;flex-shrink:0;overflow:hidden;
+                background:rgba(0,0,0,.07);display:flex;align-items:center;
+                justify-content:center;font:500 17px/1 var(--font-display);
+                color:rgba(0,0,0,.7);letter-spacing:.5px}
+.review__avatar img{width:100%;height:100%;object-fit:cover}
+.review__name{font:500 16px/1.3 var(--font-text);color:var(--color-black)}
+.review__co{font:400 14px/1.3 var(--font-text);color:var(--muted-light);margin-top:2px}
+
+/* ---- 07 ПРОЦЕСС ----
+   Стрелки рисуются псевдоэлементом в зазоре между карточками:
+   квадрат с двумя границами, повёрнутый на 45° — получается
+   аккуратный шеврон без картинок и лишней разметки.
+   Зазор вынесен в переменную, потому что стрелку надо поставить
+   ровно в его середину: right = -gap/2. */
+.grid-5{--step-gap:clamp(20px,2.4vw,34px);
+        display:grid;grid-template-columns:repeat(5,1fr);
+        gap:var(--step-gap);margin-bottom:clamp(32px,3.6vw,50px)}
+.step{position:relative;border:1px solid var(--border-dark);
+      border-radius:var(--radius-tile);padding:clamp(20px,2.1vw,28px)}
+.step:not(:last-child)::after{
+      content:'';position:absolute;top:50%;right:calc(-1 * var(--step-gap) / 2);
+      width:9px;height:9px;
+      border-top:2px solid rgba(255,255,255,.28);
+      border-right:2px solid rgba(255,255,255,.28);
+      transform:translate(50%,-50%) rotate(45deg);
+      pointer-events:none}
+.step__num{display:block;font:700 15px/1 var(--font-display);letter-spacing:.06em;
+           color:var(--color-accent);margin-bottom:clamp(14px,1.6vw,20px)}
+.step__title{font:500 clamp(20px,1.9vw,25px)/1.2 var(--font-display);
+             letter-spacing:-.01em;color:var(--color-white);margin-bottom:6px}
+.step__time{font:400 15px/1.3 var(--font-text);color:rgba(201,242,77,.75);
+            margin-bottom:clamp(12px,1.3vw,16px)}
+.step__text{font:400 clamp(14px,1.35vw,16px)/1.5 var(--font-text);
+            color:rgba(255,255,255,.7)}
+.process__title{margin-bottom:clamp(35px,6.16vw,62px)}
+/* без max-width — иначе строка ломается пополам. На узких экранах
+   перенос всё равно случится естественным образом, nowrap не ставлю */
+.process__note{font-size:16px;line-height:1.5}
+
+/* ---- 08 О НАС ---- */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:35px;align-items:center}
+.about__text{font:400 clamp(17px,1.87vw,20px)/1.3 var(--font-text);color:rgba(0,0,0,.7);
+             max-width:620px;margin-top:22px}
+/* карточка выше: увеличены и внутренние поля, и зазор между ячейками.
+   row-gap заметно больше column-gap — так две строки цифр читаются
+   как два отдельных ряда, а не как сплошная сетка 2×2 */
+.about__stats{padding:clamp(34px,3.9vw,56px);display:grid;grid-template-columns:1fr 1fr;
+              column-gap:clamp(32px,3.6vw,52px);row-gap:clamp(46px,5.2vw,76px)}
+/* tabular-nums — цифры одной ширины, иначе при отсчёте от 0 карточка
+   дёргается: «1» уже «8», и подпись под ней прыгает */
+.stat__num{font:700 clamp(42px,4vw,61px)/1 var(--font-display);letter-spacing:-.02em;
+           color:var(--color-black);font-variant-numeric:tabular-nums}
+/* «x» в множителе мельче цифр: в em, поэтому масштабируется вместе
+   с ними на любой ширине экрана */
+.stat__x{font-size:.62em}
+.stat__label{font:400 clamp(15px,1.4vw,18px)/1.3 var(--font-text);
+             color:var(--muted-light);margin-top:8px}
+
+/* ---- 09 ПАКЕТЫ ----
+   Блок уплотнён, чтобы влезать в один экран: параметры в две колонки
+   вместо четырёх строк, меньше кегль и внутренние отступы. */
+.pricing{padding-top:clamp(34px,3.6vw,50px);padding-bottom:var(--pad-y);margin-top:20px}
+.pricing .h2{margin-bottom:clamp(20px,2.2vw,30px)}
+
+.pack{padding:clamp(24px,2.4vw,30px);display:flex;flex-direction:column}
+.pack--hl{background:var(--color-dark);border-color:transparent}
+.pack--hl:hover{border-color:transparent}
+
+.pack__name{font:500 clamp(20px,1.8vw,23px)/1.2 var(--font-display);letter-spacing:-.015em;
+            color:var(--color-black)}
+.pack--hl .pack__name{color:var(--color-white)}
+/* min-height — чтобы цены во всех трёх карточках стояли на одной линии,
+   даже если строка «кому» где-то длиннее */
+.pack__for{font:400 14px/1.35 var(--font-text);color:var(--muted-light);
+           margin-top:8px;min-height:36px}
+.pack--hl .pack__for{color:var(--muted-dark)}
+.pack__price{font:700 clamp(30px,2.8vw,36px)/1 var(--font-display);letter-spacing:-.02em;
+             color:var(--color-dark);margin:14px 0 18px}
+.pack--hl .pack__price{color:var(--color-accent)}
+/* плашка "Оптимально для запуска рекламы" — переиспользует .tag,
+   тут только внешний отступ, чтобы визуально стояла над названием */
+.pack__badge{display:inline-block;align-self:flex-start;margin-bottom:14px}
+
+/* параметры в 2 колонки: четыре строки превращаются в две */
+.pack__specs{list-style:none;display:grid;grid-template-columns:1fr 1fr;
+             column-gap:16px;border-top:1px solid var(--border-light);margin-bottom:18px}
+.pack--hl .pack__specs{border-color:var(--border-dark)}
+.pack__specs li{display:flex;flex-direction:column;gap:3px;padding:11px 0;
+                border-bottom:1px solid var(--border-light);
+                font:400 clamp(14px,1.2vw,16px)/1.3 var(--font-text)}
+.pack--hl .pack__specs li{border-color:var(--border-dark)}
+.pack__specs span{color:var(--muted-light);font-size:clamp(12.5px,1.05vw,14px)}
+.pack--hl .pack__specs span{color:var(--muted-dark)}
+.pack__specs b{font-weight:500;color:var(--color-black)}
+.pack--hl .pack__specs b{color:var(--color-white)}
+
+/* ЧЕК-ЛИСТ ПАКЕТА: своя длина в каждой карточке (7/9/5 пунктов),
+   раскладка — 2 колонки. Раньше это был один <ul> на grid-template-columns
+   с общими строками — а у CSS Grid высота строки равна высоте самого
+   высокого элемента в ней, поэтому однострочный пункт рядом с
+   двухстрочным соседом получал пустое место снизу (align-items:start
+   это не лечит — он про позицию внутри ячейки, а не про высоту строки).
+   Теперь это два независимых <ul class="pack__list-col"> во flex-обёртке
+   .pack__list — у каждой колонки свой поток, высота одного пункта не
+   зависит от высоты пункта в соседней колонке. */
+.pack__list{display:flex;column-gap:14px;margin-bottom:20px;flex:1}
+.pack__list-col{list-style:none;display:flex;flex-direction:column;
+                 row-gap:6px;flex:1 1 0;min-width:0}
+.pack__list-col li{display:grid;grid-template-columns:16px 1fr;gap:9px;align-items:start;
+               font:400 clamp(14px,1.25vw,16.5px)/1.4 var(--font-text)}
+.pack__list-col li::before{font-weight:600;line-height:1.35}
+.pack__list-col .is-on{color:rgba(0,0,0,.8)}
+.pack__list-col .is-on::before{content:'✓';color:var(--color-good)}
+.pack--hl .pack__list-col .is-on{color:rgba(255,255,255,.9)}
+.pack--hl .pack__list-col .is-on::before{color:var(--color-accent)}
+
+/* КНОПКА-ПОДСКАЗКА рядом с пунктом (Квиз, AI-консультант). Наведение —
+   на десктопе, тап переключает .is-open — на touch-устройствах, где
+   :hover не работает. Текст — в data-tip, выводится через content. */
+.pack__tip{display:inline-flex;align-items:center;justify-content:center;
+           width:15px;height:15px;margin-left:6px;border:none;border-radius:50%;
+           background:rgba(0,0,0,.08);color:rgba(0,0,0,.5);
+           font:600 10px/1 var(--font-text);cursor:help;position:relative;
+           vertical-align:middle;flex-shrink:0;padding:0}
+.pack--hl .pack__tip{background:rgba(255,255,255,.15);color:rgba(255,255,255,.65)}
+.pack__tip::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 9px);
+                   width:min(270px,70vw);padding:12px 14px;border-radius:10px;
+                   background:var(--color-dark);color:#fff;
+                   font:400 14.5px/1.45 var(--font-text);text-align:left;
+                   opacity:0;visibility:hidden;pointer-events:none;
+                   transition:opacity .15s ease;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:6}
+.pack__tip:hover::after,.pack__tip:focus-visible::after,.pack__tip.is-open::after{
+  opacity:1;visibility:visible}
+
+.pack .btn{height:50px;font-size:15px}
+
+/* условия под пакетами — три коротких пункта в ряд + гарантия отдельной
+   плашкой ниже (раньше было одной длинной строкой через •, терялось
+   среди мелкого текста и не читалось как аргумент) */
+.packs__foot{margin-top:clamp(40px,4.5vw,60px)}
+.packs__terms{list-style:none;display:flex;justify-content:center;
+              gap:clamp(28px,4vw,56px);flex-wrap:wrap;text-align:center}
+.packs__terms b{display:block;font:500 17px/1.3 var(--font-display);
+               color:var(--color-black);margin-bottom:4px}
+.packs__terms span{font:400 14px/1.4 var(--font-text);color:var(--muted-light)}
+.packs__guarantee{max-width:640px;margin:clamp(18px,2vw,26px) auto 0;
+                  padding:14px 26px;border-radius:var(--radius-card);
+                  background:rgba(201,242,77,.18);
+                  font:400 15px/1.45 var(--font-text);color:var(--color-black);
+                  text-align:center}
+.packs__guarantee b{font-weight:500}
+
+/* ---- 09.1 ПАКЕТЫ: 721–1200px, точечное исключение ----
+   В этом диапазоне .grid-3 (3 узкие колонки) сжимает карточку тарифа
+   до нечитаемой ширины — контента в пакете больше, чем в карточке кейса
+   или шага, на которые рассчитан общий .grid-3. Раскладываем карточки
+   в один столбец на всю ширину, а внутри — шапку (название/для кого/
+   цена) и характеристики (срок/правки/поддержка) ставим в один ряд
+   (слева/справа), а не друг под другом, чтобы использовать освободившуюся
+   горизонталь. Список пунктов и кнопка остаются на всю ширину карточки
+   снизу — как и было, просто на всю ширину экрана, а не трети.
+   Раньше это работало только с 901px — на 721–900px карточки оставались
+   в 3 узкие колонки точно с той же проблемой, расширили границу вниз
+   до 721 (не 720 — иначе пересечётся с мобильным max-width:720, где
+   и так уже одна колонка через общий .grid-3, но без горизонтальной
+   раскладки самой карточки).
+   .pack__head — обёртка вокруг шапки (см. разметку), нужна, чтобы
+   отдать её как единый flex-элемент рядом со .pack__specs; сама по себе
+   она ничего не меняет вне этого медиа-запроса (обычный div в потоке). */
+@media (min-width: 721px) and (max-width: 1200px) {
+  .pricing .grid-3{grid-template-columns:1fr;gap:20px}
+  .pack{flex-direction:row;flex-wrap:wrap;align-items:flex-start;
+        column-gap:clamp(24px,4vw,48px);row-gap:0}
+  .pack__head{flex:1 1 280px}
+  .pack__specs{flex:1 1 320px;margin-bottom:0}
+  .pack__list{flex:0 0 100%;margin-top:22px}
+  .pack .btn{flex:0 0 100%}
+}
+
+/* ---- 07.1 ПРОЦЕСС: 721–900px, точечное исключение ----
+   .grid-5 — всегда 5 узких колонок (кроме ≤720, там 2 через 1fr 1fr).
+   В 721–900 та же проблема, что раньше была с тарифами — карточка
+   сжимается до нечитаемой узкой колонки. Вместо своей раскладки
+   (плашки в ряд) — просто повторяем то же решение, что уже есть
+   для ≤720: сетку 1fr 1fr (2 колонки), карточка .step остаётся
+   обычной — без переиспользования .step__head. */
+@media (min-width: 721px) and (max-width: 900px) {
+  .grid-5{grid-template-columns:1fr 1fr;gap:16px}
+}
+
+/* ---- 09.5 FAQ ---- */
+.faq{padding-top:clamp(10px,1.5vw,20px)}
+.faq__list{max-width:1040px;margin:0 auto;border-top:1px solid var(--border-light);
+           display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;
+           grid-template-rows:repeat(3,auto);column-gap:56px}
+.faq__item{border-bottom:1px solid var(--border-light)}
+.faq__q{width:100%;display:flex;align-items:center;justify-content:space-between;
+        gap:20px;padding:clamp(18px,2vw,24px) 0;background:none;border:0;
+        cursor:pointer;text-align:left;font:500 clamp(16px,1.55vw,19px)/1.35 var(--font-display);
+        color:var(--color-black);transition:opacity var(--ease-fast)}
+.faq__q:hover{opacity:.65}
+.faq__icon{position:relative;flex:none;width:22px;height:22px}
+.faq__icon::before,.faq__icon::after{content:'';position:absolute;top:50%;left:50%;
+        background:var(--color-black);transform:translate(-50%,-50%);
+        transition:transform var(--ease-fast),opacity var(--ease-fast)}
+.faq__icon::before{width:14px;height:1.5px}
+.faq__icon::after{width:1.5px;height:14px}
+.faq__item.is-open .faq__icon::after{opacity:0;transform:translate(-50%,-50%) rotate(90deg)}
+.faq__a-wrap{max-height:0;overflow:hidden;transition:max-height var(--ease-panel)}
+.faq__a{padding-bottom:clamp(18px,2vw,24px);
+        font:400 clamp(14.5px,1.3vw,16.5px)/1.5 var(--font-text);color:var(--muted-light)}
+.faq__cta{margin-top:clamp(32px,3.6vw,48px);max-width:1040px;margin-inline:auto;
+          display:flex;align-items:center;justify-content:space-between;gap:24px;
+          flex-wrap:wrap;padding:clamp(22px,2.4vw,30px) clamp(24px,2.8vw,36px);
+          border-radius:var(--radius-card);background:var(--color-dark)}
+.faq__cta-text{font:500 clamp(15px,1.35vw,17px)/1.4 var(--font-display);color:var(--color-white)}
+.faq__cta-icons{display:flex;align-items:center;gap:12px;flex:none}
+/* та же механика, что у .tg-btn в шапке: лаймовый круг, тёмная иконка,
+   при наведении иконка «улетает» по диагонали, а её дубликат
+   влетает с противоположного угла */
+.faq__cta-icon{width:46px;height:46px;border-radius:50%;background:var(--color-accent);
+                display:flex;align-items:center;justify-content:center;
+                position:relative;overflow:hidden;flex-shrink:0;text-decoration:none}
+.faq__icon-img{position:absolute;top:50%;left:50%;width:19px;height:19px;display:block;
+               filter:brightness(0);
+               transition:transform .45s cubic-bezier(.4,0,.2,1),opacity .35s ease}
+.faq__mail{position:absolute;top:50%;left:50%;font:500 25px/1 var(--font-display);
+           color:var(--color-dark);
+           transition:transform .45s cubic-bezier(.4,0,.2,1),opacity .35s ease}
+.faq__icon-img--a,.faq__mail--a{transform:translate(-50%,-50%) rotate(0deg);opacity:1}
+.faq__icon-img--b,.faq__mail--b{transform:translate(-190%,190%) rotate(-25deg);opacity:0}
+.faq__cta-icon:hover .faq__icon-img--a,.faq__cta-icon:hover .faq__mail--a{
+  transform:translate(190%,-190%) rotate(25deg);opacity:0}
+.faq__cta-icon:hover .faq__icon-img--b,.faq__cta-icon:hover .faq__mail--b{
+  transform:translate(-50%,-50%) rotate(0deg);opacity:1}
+
+/* ---- 10 БРИФ ---- */
+.brief{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+/* min-height рассчитан на самый длинный вопрос (5 кнопок + запас) —
+   без него карточка прыгает по высоте от вопроса к вопросу */
+.brief__box{position:relative;border:1px solid var(--border-dark);border-radius:var(--radius-block);padding:31px;min-height:520px}
+.brief__bars{display:flex;gap:7px;margin-bottom:26px}
+.brief__bars span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.1);transition:background .3s}
+.brief__bars span.is-on{background:var(--color-accent)}
+.brief__counter{font:500 13px/1.3 var(--font-display);color:var(--muted-dark);margin-bottom:9px}
+.brief__q{font:500 22px/1.2 var(--font-display);color:var(--color-white);margin-bottom:26px}
+.brief__opts{display:flex;flex-direction:column;gap:13px}
+.brief__opts button{text-align:left;padding:15px 22px;border-radius:10px;
+                    border:1px solid var(--border-dark);background:none;color:var(--color-white);
+                    font:400 17px/1.3 var(--font-text);cursor:pointer;transition:border-color .2s,background .2s}
+.brief__opts button:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.05)}
+/* инлайн-поле "свой вариант" — выглядит как ещё один пункт списка,
+   а не всплывает отдельно: та же рамка/радиус/высота, что у кнопок,
+   только вместо текста — прозрачный input и кнопка-стрелка справа */
+.brief__opt-free{display:flex;align-items:center;gap:8px;
+                 padding:8px 8px 8px 22px;border-radius:10px;
+                 border:1px solid var(--border-dark);transition:border-color .2s}
+.brief__opt-free:focus-within{border-color:var(--color-accent)}
+.brief__free-input{flex:1;min-width:0;padding:7px 0;border:0;background:none;
+                   color:var(--color-white);font:400 17px/1.3 var(--font-text)}
+.brief__free-input::placeholder{color:var(--muted-dark)}
+.brief__free-input:focus{outline:none}
+/* .brief__opt-free .brief__free-btn — специфичность выше, чем у общего
+   .brief__opts button (тот задаёt прозрачный фон всем кнопкам-вариантам
+   и иначе перебивает зелёный фон здесь) */
+.brief__opt-free .brief__free-btn{flex-shrink:0;width:44px;height:38px;border-radius:10px;border:0;
+                 background:var(--color-accent);color:var(--color-dark);
+                 font:500 17px/1 var(--font-display);cursor:pointer;
+                 display:flex;align-items:center;justify-content:center;
+                 transition:opacity .2s}
+.brief__opt-free .brief__free-btn:hover{background:var(--color-accent);opacity:.85}
+/* невалидное поле — красная обводка + лёгкая тряска для внимания */
+.brief__opt-free.is-error{border-color:var(--color-bad);animation:brief-shake .25s ease}
+@keyframes brief-shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-5px)}
+  75%{transform:translateX(5px)}
+}
+/* тост с ошибкой — выезжает снизу по центру карточки, сам гаснет */
+.brief__toast{position:absolute;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
+             padding:12px 22px;border-radius:var(--radius-pill);
+             background:var(--color-bad);color:#fff;
+             font:500 14px/1.3 var(--font-text);white-space:nowrap;
+             opacity:0;pointer-events:none;
+             transition:opacity .3s ease,transform .3s ease;z-index:5}
+.brief__toast.is-visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.brief__done{text-align:center;padding:26px 0}
+.brief__done-check{font-size:53px;line-height:1;color:var(--color-accent);margin-bottom:18px}
+.brief__done-title{font:500 22px/1.2 var(--font-display);color:var(--color-white);margin-bottom:9px}
+.brief__done-text{font:400 15px/1.4 var(--font-text);color:var(--muted-dark)}
+
+/* ---- 10.1 БРИФ: 721–900px, точечное исключение ----
+   .brief — грид 1fr 1fr (заголовок слева, квиз справа), на 721–900px
+   квиз сжимается вплотную к тексту. Тот же приём, что и в ≤720
+   (см. .brief{grid-template-columns:1fr} в мобильном блоке) — один
+   столбец, квиз идёт под подзаголовком по порядку разметки.
+   Важно: этот блок должен идти ПОСЛЕ базового .brief{...} выше —
+   при равной специфичности (0,1,0) выигрывает тот, что позже
+   в каскаде, а не тот, что внутри медиа-запроса. */
+@media (min-width: 721px) and (max-width: 900px) {
+  .brief{grid-template-columns:1fr;gap:28px}
+}
+
+/* ---- 11 ФУТЕР ---- */
+/* grid, а не flex+space-between: с space-between средний блок
+   центрируется, только если левый и правый ровно одной ширины,
+   а тут слева длинный текст, справа — короткий год. Две одинаковые
+   боковые колонки (minmax(0,1fr)) дают настоящий центр середине. */
+.footer{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+       align-items:end;gap:18px}
+.footer__legal{font:400 14px/1.4 var(--font-text);color:var(--muted-light)}
+.footer__links{display:flex;align-items:center;justify-content:center;gap:26px;flex-wrap:wrap}
+.footer__links a{font:400 15px/1.3 var(--font-text);color:var(--muted-light);
+                 text-decoration:none;transition:color var(--ease-fast)}
+.footer__links a:hover{color:var(--color-black)}
+.footer__copy{font:400 14px/1.3 var(--font-text);color:rgba(0,0,0,.7);justify-self:end}
+
+/* ---- 11.1 ФУТЕР: 721–900px, точечное исключение ----
+   .footer — грид в 3 колонки (реквизиты / ссылки / копирайт в ряд),
+   на 721–900px реквизиты (длинный текст) сжимают соседние колонки.
+   Тот же приём, что и в ≤720 (см. .footer{display:flex;
+   flex-direction:column} в мобильном блоке) — строки друг под другом
+   по центру, а не колонки. */
+@media (min-width: 721px) and (max-width: 900px) {
+  .footer{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
+  .footer__legal{white-space:normal}
+  .footer__links{justify-content:center}
+  .footer__copy{justify-self:auto}
+}
+
+/* =========================================================
+   1200–1440px — контент визуально крупноват именно в этом диапазоне
+   (шапка уже переключилась на компакт-вид, а секции ещё сидят почти
+   на максимуме clamp()). Уменьшаем на ~15% крупные заголовки, hero,
+   карточки инструментов/кейсов, внутренние размеры блока тарифов,
+   шаги процесса, статистику. Межблочный вертикальный ритм (--pad-y,
+   .pad-bottom-lg, top-отступ .pricing) сюда больше НЕ входит — раньше
+   был свой уменьшенный вариант, из-за чего на границах 1200 и 1440px
+   отступы между блоками резко скакали; теперь везде одна и та же
+   fluid-формула из базовых правил, без скачков.
+   Мелкий декоративный текст (футер, ответы FAQ, отзывы)
+   не трогаем — на восприятие размера он не влияет, а риск лишний.
+   Единственное исключение из общей системы 4 брейкпоинтов наравне
+   с патчем чек-листа тарифов на 1201–1440 (см. выше по файлу).
+   ========================================================= */
+@media (min-width:1200px) and (max-width:1440px){
+  :root{
+    --pad-x: clamp(17px,4.13vw,59.5px);
+    --card-pad-x: clamp(19px,3.74vw,47px);
+    --card-pad-y: clamp(26px,4.21vw,53px);
+  }
+
+  /* hero */
+  .hero-card__img{right:-125px;width:clamp(527px,81.6vw,1156px)}
+  .hero-card__content{padding:clamp(82px,9.35vw,127px) clamp(17px,4.25vw,59px) clamp(31px,4.25vw,51px)}
+  .badge{font-size:clamp(12px,1.03vw,13px);margin-bottom:clamp(13px,1.5vw,19px)}
+  .headline{font-size:64px;margin-bottom:clamp(15px,1.87vw,25px)}
+  .desc{font-size:clamp(14px,1.59vw,17px);max-width:350px;margin-bottom:clamp(22px,3.27vw,34px)}
+  .hero-ctas{margin-bottom:clamp(26px,3.74vw,41px)}
+  .btn-primary,.btn-ghost{height:48px;padding:0 28px}
+
+  /* заголовки и общие компоненты */
+  .h2{font-size:clamp(30px,4.86vw,65px)}
+  .h2--lg{font-size:clamp(31px,5.24vw,65px)}
+  .lead{font-size:clamp(14px,1.59vw,17px);margin-top:19px}
+  .card-dark{padding:clamp(30px,5.61vw,75px) var(--card-pad-x)}
+  .btn{height:48px;padding:0 28px;font-size:15px}
+
+  /* проблемы */
+  .problem-card{padding:clamp(20px,2.47vw,31px) clamp(19px,2.72vw,34px)}
+  .problem__num{font-size:clamp(16px,1.7vw,22px)}
+  .problem__title{font-size:clamp(17px,1.87vw,25px)}
+  .problem__text{font-size:clamp(14px,1.28vw,16px)}
+
+  /* инструменты */
+  .tools__title{margin-bottom:clamp(26px,3.74vw,45px)}
+  .tool-card{flex:0 0 262px;min-height:299px}
+  .tool-card__media{flex:0 0 150px}
+  .tool-card__body{padding:20px}
+  .tool-card__name{font-size:17px}
+  .tool-card__desc{font-size:14px}
+  .tools__note{margin:clamp(34px,3.74vw,49px) auto 0}
+
+  /* кейсы */
+  .case__media{height:clamp(221px,19.55vw,289px)}
+  .case__body{padding:24px}
+  .case__title{font-size:clamp(17px,1.62vw,21px)}
+  .case__desc{font-size:14px;margin-bottom:22px}
+  .case__metrics{gap:26px}
+  .metric__value{font-size:24px}
+  .case__cta{margin-top:20px;height:39px;padding:0 22px;font-size:13px}
+
+  /* cta-полоса — внутренние отступы карточки, не межблочный ритм */
+  .cta-strip{padding-top:clamp(14px,1.45vw,19px);padding-bottom:clamp(14px,1.45vw,19px)}
+  .cta-strip__title{font-size:clamp(16px,1.79vw,24px)}
+  .cta-strip .btn{min-width:349px;font-size:18px}
+
+  /* лента конкурентов */
+  .diff__lead{font-size:clamp(14px,1.59vw,17px);margin-top:19px;margin-bottom:30px}
+  .diff__viewport{height:clamp(323px,37.4vw,612px)}
+
+  /* процесс */
+  .grid-5{gap:clamp(17px,2.04vw,29px);margin-bottom:clamp(27px,3.06vw,42px)}
+  .step{padding:clamp(17px,1.79vw,24px)}
+  .step__num{font-size:13px;margin-bottom:clamp(12px,1.36vw,17px)}
+  .step__title{font-size:clamp(17px,1.62vw,21px)}
+  .step__time{font-size:13px;margin-bottom:clamp(10px,1.1vw,14px)}
+  .step__text{font-size:clamp(12px,1.15vw,14px)}
+  .process__title{margin-bottom:clamp(30px,5.24vw,53px)}
+
+  /* обо мне / статистика */
+  .about{gap:30px}
+  .about__text{font-size:clamp(14px,1.59vw,17px);margin-top:19px}
+  .about__stats{padding:clamp(29px,3.32vw,48px);column-gap:clamp(27px,3.06vw,44px);row-gap:clamp(39px,4.42vw,65px)}
+  .stat__num{font-size:clamp(35px,3.4vw,52px)}
+  .stat__label{font-size:clamp(13px,1.19vw,15px);margin-top:7px}
+
+  /* пакеты — top-padding и margin-top межблочного ритма сюда больше
+     не входят (см. базовые правила .pricing выше по файлу), только
+     внутренние размеры карточек тарифов */
+  .pricing .h2{margin-bottom:clamp(17px,1.87vw,26px)}
+  .pack{padding:clamp(20px,2.04vw,26px)}
+  .pack__name{font-size:clamp(17px,1.53vw,20px)}
+  .pack__for{font-size:12px;margin-top:7px;min-height:31px}
+  .pack__price{font-size:clamp(26px,2.38vw,31px);margin:12px 0 15px}
+  .pack__specs li{font-size:clamp(12px,1.02vw,14px);padding:9px 0}
+  .pack__specs span{font-size:clamp(11px,0.89vw,12px)}
+  .pack__list-col li{font-size:clamp(12px,1.06vw,14px)}
+  .pack .btn{height:43px;font-size:15px}
+  .packs__foot{margin-top:clamp(34px,3.83vw,51px)}
+}
+
+/* =========================================================
+   ≤1200px — шапка: полное меню/контакт скрываются, компакт-плашка
+   (бургер + «Связаться») показывается. Плюс стрелки между карточками
+   процесса — тоже завязаны на этот порог, так как «Процесс» строится
+   в 5 колонок и именно тут перестаёт помещаться в одну строку.
+   Остальные секции уже на fluid clamp() и сжимаются сами.
+   ========================================================= */
+@media (max-width: 1200px) {
+  .contact, .nav { display: none; }
+  .compact-head, .mobile-menu { display: flex; }
+  /* стрелки процесса только когда все пять карточек в одну строку —
+     при перестроении сетки они указывали бы в пустоту */
+  .step:not(:last-child)::after{display:none}
+}
+
+/* =========================================================
+   ≤900px — хиро: раньше это переключалось резко на границе 720px
+   (max-width:720), а с 721 до 900px хиро возвращался к десктопному
+   виду — с картинкой, с высотой calc(100vh-40px) и маленьким
+   padding-top. Получался жёсткий скачок ровно на 720px: на 719px
+   ещё мобильный вид (без картинки, по центру), на 720/721px уже
+   другой. Поднимаем границу этих конкретных хиро-правил до 900px —
+   тот же вид без скачка идёт от мобильного до 900px, а десктопный
+   начинается только с 901px (где и так уже свой .hero-card__bg
+   в @media 900–1200, см. выше). Остальные мобильные правила (шапка,
+   сетки, .diff и т.д.) ниже остались на своей границе 720px — их
+   этот скачок не касался, трогать не просили. */
+@media (max-width: 900px) {
+  .hero-card__img{display:none}
+  /* базовый min-height:calc(100vh - 40px) у .hero-card рассчитан на
+     десктопный .hero-section{padding:20px} — 40px это верхний+нижний
+     отступ вокруг карточки. Здесь .hero-section уже padding:0 (ниже),
+     вокруг карточки этого отступа больше нет, а формула высоты
+     осталась старой — карточка была бы на 40px короче экрана.
+     Отдельный min-height:100vh перекрывает это. */
+  .hero-card{min-height:100vh;border-radius:0}
+  .hero-card__content{padding-top:clamp(108px,26vw,140px)}
+  .hero-section{padding:0}
+}
+
+/* =========================================================
+   <720px — мобильный: только структурные изменения (колонки грида,
+   направление флексов), плюс мобильный вариант шапки (цельная
+   тёмная плашка вместо трёх раздельных). Шрифты/паддинги секций
+   не трогаем отдельно — clamp() уже даёт нужный размер сам.
+   ========================================================= */
+@media (max-width: 720px) {
+  .hero-ctas{flex-direction:column;align-items:stretch;gap:28px}
+  .hero-cta{align-items:stretch}
+  .btn-primary,.btn-ghost{width:100%}
+  /* пункт 2 инспектора: text-align:center центрирует текст ВНУТРИ
+     .cap, но сама коробка растягивалась по cross-axis родителя
+     (align-items:stretch у .hero-cta) до своего max-width:242px и
+     упиралась в него слева — снаружи выглядело так, будто центрирования
+     нет вообще. align-self:center возвращает .cap к её собственной
+     ширине (по содержимому, до 242px) и центрирует уже саму коробку. */
+  .cap{margin-left:0;text-align:center;align-self:center}
+  .desc{max-width:400px}
+  .headline{font-size:clamp(52px,8.58vw,100px)}
+
+  /* пункты инспектора: секции-карточки на мобильном идут во всю ширину
+     экрана без скруглений и без внешнего отступа — но НЕ все. cta-strip
+     и diff (обе card-lime) попросили вернуть как было, поэтому из общего
+     правила они исключены и .frame--inset без паддинга применяется
+     точечно только к tools/process/brief, а не ко всем пяти сразу. */
+  .hero-section{padding:0}
+  section:nth-of-type(4).frame--inset,
+  section:nth-of-type(8).frame--inset,
+  #brief.frame--inset{padding:0 0 var(--pad-y)}
+  .card-dark{border-radius:0}
+
+  /* .pack (тариф) и .faq__cta — вернули отступ и скругление как было,
+     override больше не нужен, оставляем на дефолтных стилях .card /
+     .card-lime / .frame--flow */
+
+  .cta-strip__title{text-align:center;font-size:18px}
+  .cta-strip{align-items:center}
+
+  .site-header{
+    display:flex;position:fixed;top:28px;left:var(--pad-x);right:var(--pad-x);z-index:1001;
+    height:57px;padding:0 8px 0 8px;border-radius:100px;
+    align-items:center;justify-content:space-between;gap:18px;
+    background:var(--glass-dark-bg);border:1px solid var(--glass-dark-border);
+    backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);
+  }
+  /* по просьбе: на мобильном шапка больше не подтягивается к top:0
+     при скролле (было body.header-scrolled .site-header{top:0} +
+     transition:top на самой .site-header) — теперь position:fixed
+     top:28px фиксирован и не меняется, header-scrolled на мобильном
+     ни на что не влияет. */
+  .site-header__actions{position:static;right:auto;top:auto;display:flex;align-items:center}
+  .site-header__nav-wrap{display:none}
+
+  .brand, .tg-btn, .compact-head { display: none; }
+  .mobile__brand { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .mobile__brand-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; display: block; }
+  .mobile__brand-name { font: 500 18px/1 'Manrope', sans-serif; letter-spacing: -.36px;
+                         color: #fff; transition: color .2s; white-space: nowrap; }
+  .mobile__brand:hover .mobile__brand-name { color: #c9f24d; }
+
+  .mobile__head-right { display: flex; align-items: center; gap: 12px; }
+  /* компакт-шапка на мобильном уменьшена — не тот же общий размер,
+     что у десктопной шапки, которую она заменяет */
+  .mobile__contact { display: inline-flex; align-items: center; height: 42px; padding: 0 18px;
+                      border-radius: 100px; background: #c9f24d;
+                      color: #000; text-decoration: none; white-space: nowrap;
+                      font: 500 14px/1 'Manrope', sans-serif; transition: opacity .2s; }
+  .mobile__contact:hover { opacity: .82; }
+
+  .mobile__tg-btn { display: flex; align-items: center; justify-content: center;
+                     width: 42px; height: 42px; border-radius: 50%; background: #c9f24d;
+                     position: relative; overflow: hidden; }
+  .mobile__tg-btn .tg-btn__icon { width: 17px; height: 17px; }
+  .mobile__tg-btn:hover { opacity: 1; }
+  .mobile__tg-btn:hover .tg-btn__icon--a { transform: translate(190%, -190%) rotate(25deg); opacity: 0; }
+  .mobile__tg-btn:hover .tg-btn__icon--b { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+
+  .mobile-menu a { font-size: clamp(28px, 9vw, 40px); }
+
+  .burger--sm { width: 42px; height: 42px; }
+
+  /* структурные перестройки контента (не типографика — та на clamp) */
+  /* пункт 4 инспектора: этот align-items:flex-start перебивал более
+     ранний .cta-strip{align-items:center} в этом же медиа-блоке (тот
+     же .cta-strip объявлен дважды — выше для центровки заголовка, здесь
+     для колонки на мобильном) и заголовок переставал центрироваться,
+     хотя text-align:center у .cta-strip__title был на месте. Кнопка на
+     центровку не реагирует — у неё explicit width:100% ниже. */
+  .cta-strip{flex-direction:column;align-items:center;gap:18px}
+  .cta-strip .btn{min-width:0;width:100%}
+
+  /* .slider на десктопе намеренно "выбит" отрицательными margin в
+     полную ширину card-dark (см. базовое правило .slider) — так лента
+     может красиво обрезаться по краю экрана. На мобильном карточка
+     должна стоять В контентной части, а не у края экрана, поэтому
+     здесь bleed отключаем — слайдер снова внутри обычного padding
+     карточки, как заголовок .tools__title над ним. */
+  .slider{margin-left:0;margin-right:0}
+
+  /* одна карточка на экран, во всю контентную часть (ширину задаёт JS,
+     см. layout() в блоке 3). Высота увеличена относительно старой
+     232×296 — при полной ширине контентной части те же пропорции
+     сплющивали .tool-card__body и overflow:hidden обрезал описание. */
+  .tool-card { flex: 0 0 232px; min-height: 380px; padding: 0; }
+  .tool-card__media { flex: 0 0 190px; }
+  .slider__group { gap: 16px; padding-right: 16px; }
+  .tool-card__body { padding: 20px; }
+  .tool-card__name { font-size: 17px; }
+  .tools-arrow { display: block; }
+  .tools-dots { display: flex; }
+
+  .grid-3 { grid-template-columns: 1fr; gap: 16px; }
+  .grid-5 { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .faq__list { grid-template-columns: 1fr; grid-auto-flow: row; }
+  .faq__cta { flex-direction: column; align-items: flex-start; }
+
+  /* пункты 2 и 7: слайдер по центру, кнопка снизу, слайд во всю ширину
+     контентной части (без bleed — карточка вернула себе паддинг).
+     Переключаем .diff с grid на flex-column, иначе старое
+     grid-template-columns тут просто мёртвый код.
+     .diff__text{display:contents} «растворяет» обёртку, чтобы её дети
+     (заголовок/текст/кнопка) стали прямыми участниками flex рядом со
+     .diff__slider — тогда можно явно управлять порядком через order,
+     а не зависеть от порядка в разметке. */
+  .diff{display:flex;flex-direction:column}
+  .diff__text{display:contents}
+  .diff__title{order:1}
+  .diff__lead{order:2;max-width:530px}
+  .diff__slider{order:3;margin:-8px 0 0;width:100%}
+  .diff__row{order:4;flex-direction:column;align-items:center;gap:12px;margin-top:28px;width:100%}
+  /* по просьбе: весь .diff__row (кнопка + подпись) по центру.
+     ВАЖНО: .diff (родитель) в мобильном режиме использует
+     align-items:start (наследуется из базового правила .diff, тут
+     не переопределён) — без явного width:100% сам .diff__row остаётся
+     узким, по размеру своего контента (кнопки), и align-items:center
+     внутри него центрировать нечего — свободного места нет, весь блок
+     просто стоит по левому краю. width:100% отдаёт .diff__row всю
+     ширину контентной колонки, и вот в этой ширине уже центрируются
+     кнопка (была width:100%, теперь natural) и .diff__note. */
+  /* пункт 8 инспектора: align-self:center — защита от того же паттерна,
+     что был в пунктах 2 и 4 (см. комментарии выше): раньше .diff__row
+     сам центрировал детей (align-items:center), и .diff__note как
+     shrink-wrap-бокс центрировался за счёт этого. Поменяли строку выше
+     на align-items:stretch (нужно было для гарантированной полной
+     ширины кнопки, см. пункт 7) — без align-self:center на самой
+     .diff__note заметка растянулась бы вместе с кнопкой, и
+     text-align:center внутри нерастянутого текста больше не был бы
+     виден как центровка блока целиком. */
+  .diff__note{text-align:center;align-self:center}
+
+  /* пункт 6: лента конкурентов на мобильном — пошаговая карусель по
+     одному скриншоту на ширину контентной части (JS выставляет ширину
+     каждого .diff__shot в px через layout(), см. блок 3.6), а не
+     бегущая строка. Здесь только структура: горизонтальный ряд вместо
+     вертикального, высота — по контенту, gap между кадрами. */
+  .diff__viewport { height: auto; }
+  .diff__track { flex-direction: row; }
+  .diff__group { flex-direction: row; gap: 12px; padding-right: 12px; padding-bottom: 0; }
+  .diff__shot { width: 100%; height: auto; flex-shrink: 0; }
+  /* точки пагинации были рассчитаны на позицию у правого края
+     вертикальной ленты — при горизонтальной ориентации это не тот
+     угол, прячем их, чтобы не висели криво в неправильном месте */
+  .diff__dots { display: none; }
+
+  /* карточка отзыва почти во всю ширину — край следующей выглядывает
+     и подсказывает, что ленту можно листать */
+  .reviews__head { flex-direction: column; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+  .review { flex: 0 0 84%; padding: 24px; }
+  .review__quote { margin-bottom: 22px; }
+
+  .about { grid-template-columns: 1fr; gap: 28px; }
+  .about__stats { padding: 42px 22px; gap: 20px; }
+  .stat__num { font-size: 30px; }
+
+  .pack__price { font-size: 32px; margin: 18px 0 22px; }
+  .pack__for { min-height: 0; }
+  .pack__specs { grid-template-columns: 1fr 1fr; }
+
+  .brief { grid-template-columns: 1fr; gap: 28px; }
+  .brief__box { padding: 22px; min-height: 460px; }
+  .brief__q { font-size: 18px; }
+
+  .footer { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+  .footer__legal { white-space: normal; }
+  .footer__links { justify-content: center; }
+  .footer__copy { justify-self: auto; }
+}
+
+@media (max-width: 450px) {
+  .mobile__contact { display: none; }
+  .mobile__head-right { gap: 20px; }
+  .grid-5 { grid-template-columns: 1fr; }
+  .tools__note { font-size: 14px; }
+  /* заголовок хиро на ≤720 увеличен на 30% (clamp(52px,8.58vw,100px));
+     здесь, на самых маленьких экранах (≤450), наоборот уменьшаем его
+     на 30% от ТОГО значения — иначе на узком экране крупный заголовок
+     переносится на много строк и съедает весь первый экран. */
+  .headline { font-size: clamp(36px,6vw,70px); }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== ГЛОБАЛЬНАЯ ШАПКА (fixed) ===== -->
+<header class="site-header">
+  <div class="brand">
+    <img class="brand__avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak">
+    <span class="brand__name">Max Labiak</span>
+  </div>
+
+  <div class="mobile__brand">
+    <img class="mobile__brand-avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak">
+    <span class="mobile__brand-name">Max Labiak</span>
+  </div>
+
+  <div class="site-header__nav-wrap">
+    <nav class="nav">
+      <a href="#cases">Кейсы</a>
+      <a href="#pricing">Стоимость</a>
+      <a href="#brief">Бриф</a>
+      <a href="#about">Обо мне</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </div>
+
+  <div class="site-header__actions">
+    <a class="tg-btn" href="https://t.me/maxlobyak" aria-label="Telegram">
+      <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="">
+      <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="">
+    </a>
+    <a class="contact" href="#brief">Связаться</a>
+
+    <div class="compact-head">
+      <a class="contact-pill" href="#brief">Связаться</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
+        <span class="burger__lines"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+
+    <div class="mobile__head-right">
+      <a class="mobile__tg-btn" href="https://t.me/maxlobyak" aria-label="Telegram">
+        <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="">
+        <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="">
+      </a>
+      <a class="mobile__contact" href="#brief">Связаться</a>
+      <button class="burger burger--sm" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
+        <span class="burger__lines"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="mobile-menu" id="mobile-menu">
+  <a href="#cases">Кейсы</a>
+  <a href="#pricing">Стоимость</a>
+  <a href="#brief">Бриф</a>
+  <a href="#about">Обо мне</a>
+  <a href="#faq">FAQ</a>
+</nav>
+
+<!-- ===== 01 HERO — единая flow-разметка на все ширины ===== -->
+<section class="hero-section">
+  <div class="hero-card">
+    <img class="hero-card__img" src="images/01-hero/hero-planshet.webp" alt="Скриншот примера сайта на планшете">
+    <!-- ЗАГОТОВКА для 900–1200: фоновое фото под тёмным оверлеем на всю
+         подложку карточки, вместо мокапа-планшета (тому тесно в этом
+         диапазоне). Сейчас вместо реального фото — прозрачная заглушка,
+         поменять src на фото объекта/интерьера, когда оно будет. Оба
+         элемента скрыты по умолчанию (см. .hero-card__bg/.hero-card__overlay
+         в CSS) и показываются только в @media 900–1200. -->
+    <img class="hero-card__bg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="" aria-hidden="true">
+    <div class="hero-card__overlay" aria-hidden="true"></div>
+    <div class="hero-card__content">
+      <p class="badge">Делаю сайты <b>с&nbsp;2018&nbsp;года</b></p>
+
+      <h1 class="headline">Сайт под<br><span>рекламный трафик </span>для&nbsp;ремонтных<br>компаний</h1>
+
+      <p class="desc">Превращает трафик из&nbsp;Директа и&nbsp;Авито в&nbsp;заявки на&nbsp;<span class="word-rotate"><span>замер</span><span>обратный звонок</span><span>WhatsApp</span><span>расчёт стоимости</span><span aria-hidden="true">замер</span></span></p>
+
+      <div class="hero-ctas">
+        <div class="hero-cta">
+          <!-- data-audit-open открывает модалку экспресс-аудита.
+               href="#brief" оставлен намеренно: если JS не загрузился,
+               кнопка по-прежнему ведёт на бриф, а не превращается в пустышку. -->
+          <a class="btn-primary" href="#brief" data-audit-open>Проверить свой сайт</a>
+          <p class="cap">Экспресс-аудит скорости и&nbsp;ошибок <b>за&nbsp;2&nbsp;мин</b></p>
+        </div>
+        <div class="hero-cta">
+          <a class="btn-ghost" href="#brief">Рассчитать сайт с&nbsp;нуля</a>
+          <p class="cap"><b>5&nbsp;вопросов</b>, расчёт сметы сразу на&nbsp;экране</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 02 ПРОБЛЕМЫ ===== -->
+<section class="frame--flow problems2">
+  <div class="problems2__inner">
+    <div class="problems2__head">
+      <div class="problems2__head-inner">
+        <h2 class="h2 h2--lg">Почему сайт<br>не&nbsp;даёт заявок</h2>
+        <p class="lead">Шесть причин, которые встречаются почти на&nbsp;каждом сайте ремонтной компании. Каждая из&nbsp;них режет конверсию.</p>
+      </div>
+    </div>
+    <div class="problems2__cards">
+      <div class="card problem-card"><span class="problem__num">01</span><p class="problem__title">Нет предварительного расчёта</p><p class="problem__text">Человек не понимает порядок цен и&nbsp;уходит к&nbsp;конкурентам.</p></div>
+      <div class="card problem-card"><span class="problem__num">02</span><p class="problem__title">Форма просит телефон сразу</p><p class="problem__text">Оставлять контакт до&nbsp;того, как что-то узнал, никто не&nbsp;хочет.</p></div>
+      <div class="card problem-card"><span class="problem__num">03</span><p class="problem__title">Фото со стоков вместо объектов</p><p class="problem__text">Одинаковые картинки не&nbsp;доказывают, что вы&nbsp;вообще делали ремонт.</p></div>
+      <div class="card problem-card"><span class="problem__num">04</span><p class="problem__title">Ни слова про смету и договор</p><p class="problem__text">Клиент боится скрытых платежей и&nbsp;срыва сроков, а&nbsp;на&nbsp;сайте нет никаких гарантий.</p></div>
+      <div class="card problem-card"><span class="problem__num">05</span><p class="problem__title">Некому ответить на вопрос</p><p class="problem__text">Пока вы&nbsp;отвечаете, клиент уже пишет трём вашим конкурентам.</p></div>
+      <div class="card problem-card"><span class="problem__num">06</span><p class="problem__title">Грузится шесть секунд</p><p class="problem__text">На&nbsp;телефоне вёрстка разъезжается&nbsp;— половина уходит, не&nbsp;дочитав.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 02.5 CTA-ПОЛОСА ===== -->
+<section class="frame--flow frame--inset">
+  <div class="card-lime cta-strip">
+    <h2 class="h2 cta-strip__title">Узнайте, есть&nbsp;ли эти ошибки у&nbsp;вас</h2>
+    <a class="btn btn--black" href="#brief" data-audit-open>Узнать</a>
+  </div>
+</section>
+
+<!-- ===== 03 ИНСТРУМЕНТЫ ===== -->
+<section class="frame--flow frame--inset">
+  <div class="card-dark">
+    <h2 class="h2 h2--light tools__title">Внедряю инструменты, которые приносят заявки</h2>
+
+    <div class="slider">
+      <div class="slider__track">
+        <div class="slider__group">
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/calculator.webp" alt="Калькулятор по м²" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Даёт точную цену за&nbsp;30&nbsp;секунд&nbsp;— снижает страх «дорого»</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/before-after.webp" alt="Сравнение результатов до/после" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Сравнение результатов до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/AI.webp" alt="AI-консультант" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/Quiz.webp" alt="Квиз с подбором" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Квалифицирует лид&nbsp;— вы&nbsp;получаете готовое ТЗ с&nbsp;бюджетом и&nbsp;параметрами</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/guarantee.webp" alt="Блок гарантий" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Повышает доверие на&nbsp;40%&nbsp;— закрывает возражения о&nbsp;сорванных сроках и&nbsp;скрытых платежах</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/TG.webp" alt="Заявка в Telegram" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/analytics.webp" alt="Аналитика и цели" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Сберегает рекламный бюджет&nbsp;— показывает, какой источник реально приносит деньги</p></div></div>
+        </div>
+        <div class="slider__group" aria-hidden="true">
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/calculator.webp" alt="Калькулятор по м²" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Даёт точную цену за&nbsp;30&nbsp;секунд&nbsp;— снижает страх «дорого»</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/before-after.webp" alt="Сравнение результатов до/после" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Сравнение результатов до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/AI.webp" alt="AI-консультант" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/Quiz.webp" alt="Квиз с подбором" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Квалифицирует лид&nbsp;— вы&nbsp;получаете готовое ТЗ с&nbsp;бюджетом и&nbsp;параметрами</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/guarantee.webp" alt="Блок гарантий" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Повышает доверие на&nbsp;40%&nbsp;— закрывает возражения о&nbsp;сорванных сроках и&nbsp;скрытых платежах</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/TG.webp" alt="Заявка в Telegram" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/analytics.webp" alt="Аналитика и цели" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Сберегает рекламный бюджет&nbsp;— показывает, какой источник реально приносит деньги</p></div></div>
+        </div>
+      </div>
+
+      <!-- стрелки: overlay внутри .slider (у него уже position:relative),
+           видны только на мобильном (≤720px) — на десктопе слайдер
+           бежит сам, см. .tools-arrow в CSS -->
+      <button class="tools-arrow tools-arrow--prev" id="toolsPrev" type="button" aria-label="Предыдущие карточки"></button>
+      <button class="tools-arrow tools-arrow--next" id="toolsNext" type="button" aria-label="Следующие карточки"></button>
+    </div>
+
+    <!-- точки пагинации, создаются в JS (блок 3) по числу карточек -->
+    <div class="tools-dots" id="toolsDots"></div>
+
+    <p class="note tools__note">Эти инструменты подбираются индивидуально под&nbsp;вашу нишу и&nbsp;помогают получать больше заявок с&nbsp;того&nbsp;же объёма трафика</p>
+  </div>
+</section>
+
+<!-- ===== 04 КЕЙСЫ ===== -->
+<section class="frame--flow pad-bottom-lg cases">
+  <h2 class="h2" id="cases" style="margin-bottom:44px">Кейсы</h2>
+  <div class="grid-3">
+
+    <article class="card case">
+      <div class="case__media">
+        <img src="https://images.unsplash.com/photo-1689043528099-2ba014dd7c64?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Массовый сегмент" loading="lazy">
+        <div class="case__tags"><span class="tag tag--glass">Пересобрали</span><span class="tag tag--lime">Массовый сегмент</span></div>
+      </div>
+      <div class="case__body">
+        <h3 class="case__title">Отделка и&nbsp;ремонт квартир «под&nbsp;ключ»</h3>
+        <p class="case__desc">Убрали стоковые фото, добавили калькулятор и&nbsp;квиз. Конверсия выросла с&nbsp;0.8% до&nbsp;3.1%.</p>
+        <div class="case__metrics">
+          <div><p class="metric__label">PageSpeed до</p><p class="metric__value metric__value--warn">57</p></div>
+          <div><p class="metric__label">PageSpeed после</p><p class="metric__value metric__value--good">87+</p></div>
+        </div>
+        <a class="btn btn--lime case__cta" href="#">Смотреть кейс</a>
+      </div>
+    </article>
+
+    <article class="card case">
+      <div class="case__media">
+        <img src="https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Премиум" loading="lazy">
+        <div class="case__tags"><span class="tag tag--glass">Пересобрали</span><span class="tag tag--lime">Премиум</span></div>
+      </div>
+      <div class="case__body">
+        <h3 class="case__title">Дизайнерский ремонт и&nbsp;элитные объекты</h3>
+        <p class="case__desc">Сделали акцент на&nbsp;реальных объектах и&nbsp;видео. Средний чек вырос на&nbsp;40%.</p>
+        <div class="case__metrics">
+          <div><p class="metric__label">PageSpeed до</p><p class="metric__value metric__value--bad">44</p></div>
+          <div><p class="metric__label">PageSpeed после</p><p class="metric__value metric__value--good">91+</p></div>
+        </div>
+        <a class="btn btn--lime case__cta" href="#">Смотреть кейс</a>
+      </div>
+    </article>
+
+    <article class="card case">
+      <div class="case__media">
+        <img src="https://images.unsplash.com/photo-1630567085480-826f47d6fb5f?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Дома" loading="lazy">
+        <div class="case__tags"><span class="tag tag--glass">Разработка с&nbsp;нуля</span><span class="tag tag--lime">Дома</span></div>
+      </div>
+      <div class="case__body">
+        <h3 class="case__title">Ремонт и&nbsp;отделка частных домов и&nbsp;коттеджей</h3>
+        <p class="case__desc">Новый сайт с&nbsp;нуля за&nbsp;5&nbsp;дней. 12&nbsp;заявок в&nbsp;первую неделю после запуска рекламы.</p>
+        <div class="case__metrics">
+          <div><p class="metric__label">PageSpeed до</p><p class="metric__value metric__value--bad">—</p></div>
+          <div><p class="metric__label">PageSpeed после</p><p class="metric__value metric__value--good">89+</p></div>
+        </div>
+        <a class="btn btn--lime case__cta" href="#">Смотреть кейс</a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ===== 05 ОТЛИЧИЕ ===== -->
+<section class="frame--flow frame--inset">
+  <div class="card-lime diff">
+    <div class="diff__text">
+      <h2 class="h2 diff__title">Ваши конкуренты выглядят одинаково</h2>
+      <p class="diff__lead">Синий градиент, стоковые строители, «качественно и&nbsp;в&nbsp;срок».<br>Это можно использовать.</p>
+      <div class="diff__row">
+        <a class="btn btn--black" href="#brief">Заказать разработку</a>
+        <p class="diff__note">Отвечу за&nbsp;15&nbsp;минут</p>
+      </div>
+    </div>
+
+    <div class="diff__slider">
+      <div class="diff__viewport">
+        <div class="diff__track" id="diffTrack">
+        <div class="diff__group">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" decoding="async">
+        </div>
+        <div class="diff__group" aria-hidden="true">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" decoding="async">
+        </div>
+        </div>
+      </div>
+      <div class="diff__dots" id="diffDots"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 06 ОТЗЫВЫ ===== -->
+<section class="frame--flow pad-bottom-lg">
+  <div class="reviews__head">
+    <h2 class="h2" id="reviews">Отзывы</h2>
+    <div class="reviews__nav">
+      <button class="rev-arrow" id="revPrev" type="button" aria-label="Предыдущий отзыв">←</button>
+      <button class="rev-arrow" id="revNext" type="button" aria-label="Следующий отзыв">→</button>
+    </div>
+  </div>
+
+  <div class="reviews" id="reviewsTrack">
+
+    <article class="card review">
+      <p class="review__stars" aria-label="Оценка 5 из 5">★★★★★</p>
+      <p class="review__quote">«За&nbsp;первую неделю получили 8&nbsp;заявок из&nbsp;Директа. Раньше с&nbsp;того&nbsp;же бюджета&nbsp;— 1–2 в&nbsp;месяц. Максим сделал всё быстро и&nbsp;объяснил, что изменилось.»</p>
+      <div class="review__foot">
+        <div class="review__avatar">ИС</div>
+        <div>
+          <p class="review__name">Игорь Стрельников</p>
+          <p class="review__co">РемСтройМастер</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card review">
+      <p class="review__stars" aria-label="Оценка 5 из 5">★★★★★</p>
+      <p class="review__quote">«Работали без переписки через менеджера. Прислал фото утром&nbsp;— к&nbsp;вечеру уже был первый экран. Правки принял сразу, без споров. Рекомендую.»</p>
+      <div class="review__foot">
+        <div class="review__avatar">АВ</div>
+        <div>
+          <p class="review__name">Анна Власова</p>
+          <p class="review__co">Уютный Ремонт</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card review">
+      <p class="review__stars" aria-label="Оценка 5 из 5">★★★★★</p>
+      <p class="review__quote">«Калькулятор закрыл главный вопрос&nbsp;— людям больше не&nbsp;надо звонить, чтобы узнать порядок цен. Заявки стали приходить уже с&nbsp;понятным бюджетом.»</p>
+      <div class="review__foot">
+        <div class="review__avatar">ДК</div>
+        <div>
+          <p class="review__name">Дмитрий Кузнецов</p>
+          <p class="review__co">Мастер Отделки</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card review">
+      <p class="review__stars" aria-label="Оценка 5 из 5">★★★★★</p>
+      <p class="review__quote">«Старый сайт грузился вечность и&nbsp;на&nbsp;телефоне разъезжался. Сейчас открывается мгновенно, реклама наконец окупается.»</p>
+      <div class="review__foot">
+        <div class="review__avatar">СП</div>
+        <div>
+          <p class="review__name">Сергей Панов</p>
+          <p class="review__co">ДомСтрой</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="card review">
+      <p class="review__stars" aria-label="Оценка 5 из 5">★★★★★</p>
+      <p class="review__quote">«Отдельное спасибо за&nbsp;блок с&nbsp;гарантиями и&nbsp;договором. Клиенты перестали спрашивать про скрытые платежи&nbsp;— всё написано на&nbsp;сайте.»</p>
+      <div class="review__foot">
+        <div class="review__avatar">МЛ</div>
+        <div>
+          <p class="review__name">Марина Лебедева</p>
+          <p class="review__co">Интерьер Плюс</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ===== 07 ПРОЦЕСС ===== -->
+<section class="frame--flow frame--inset">
+  <div class="card-dark">
+    <h2 class="h2 h2--light process__title">Как проходит работа</h2>
+    <div class="grid-5">
+      <div class="step">
+        <div class="step__head">
+        <span class="step__num">01</span>
+        <p class="step__title">Бриф</p>
+        <p class="step__time">20&nbsp;минут</p>
+        </div>
+        <p class="step__text">Созваниваемся или заполняем короткую анкету, фиксируем задачи и&nbsp;ЦА.</p>
+      </div>
+      <div class="step">
+        <div class="step__head">
+        <span class="step__num">02</span>
+        <p class="step__title">Первый экран</p>
+        <p class="step__time">2-й&nbsp;день</p>
+        </div>
+        <p class="step__text">Показываю концепт и&nbsp;главный оффер&nbsp;— вы&nbsp;сразу видите стиль будущего сайта.</p>
+      </div>
+      <div class="step">
+        <div class="step__head">
+        <span class="step__num">03</span>
+        <p class="step__title">Сборка</p>
+        <p class="step__time">2–4&nbsp;дня</p>
+        </div>
+        <p class="step__text">Верстаю все блоки, подключаю калькуляторы, квизы и&nbsp;адаптив под&nbsp;мобилки.</p>
+      </div>
+      <div class="step">
+        <div class="step__head">
+        <span class="step__num">04</span>
+        <p class="step__title">Тестирование</p>
+        <p class="step__time">1–2&nbsp;дня</p>
+        </div>
+        <p class="step__text">Проверяем работу форм, скорость загрузки и&nbsp;вносим необходимые правки.</p>
+      </div>
+      <div class="step">
+        <div class="step__head">
+        <span class="step__num">05</span>
+        <p class="step__title">Запуск</p>
+        <p class="step__time">1&nbsp;день</p>
+        </div>
+        <p class="step__text">Переносим сайт на&nbsp;ваш домен, настраиваем аналитику и&nbsp;передаём все доступы.</p>
+      </div>
+    </div>
+    <p class="note note--dark process__note">От&nbsp;вас&nbsp;— фото объектов, прайс, реквизиты. Срок идёт с&nbsp;момента, когда всё получено.</p>
+  </div>
+</section>
+
+<!-- ===== 08 ОБО МНЕ ===== -->
+<section class="frame--flow">
+  <div class="about">
+    <div>
+      <h2 class="h2 about__title" id="about">Кто делает</h2>
+      <p class="about__text">Я&nbsp;Макс. Уже&nbsp;3&nbsp;года специализируюсь только на&nbsp;сайтах для&nbsp;ремонтных компаний.</p>
+      <p class="about__text">Перед разработкой изучаю конкурентов, разбираюсь, как ваши клиенты принимают решение, и&nbsp;проектирую сайт так, чтобы он&nbsp;помогал рекламе приносить заявки, а&nbsp;не&nbsp;просто занимал место в&nbsp;интернете.</p>
+    </div>
+    <div class="card about__stats">
+      <div><p class="stat__num">8&nbsp;лет</p><p class="stat__label">опыта разработки сайтов, сейчас&nbsp;— под&nbsp;нишу ремонта</p></div>
+      <div><p class="stat__num"><span class="stat__x">x</span>2–<span class="stat__x">x</span>3</p><p class="stat__label">рост окупаемости рекламы у&nbsp;клиентов</p></div>
+      <div><p class="stat__num">3.5%</p><p class="stat__label">средняя конверсия разработанных сайтов</p></div>
+      <div><p class="stat__num">5&nbsp;дней</p><p class="stat__label">от&nbsp;брифинга до&nbsp;готового сайта на&nbsp;домене</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 09 ПАКЕТЫ ===== -->
+<section class="frame--flow pricing">
+  <h2 class="h2" id="pricing" style="margin-bottom:44px">Пакеты</h2>
+  <div class="grid-3">
+    <div class="card pack">
+      <div class="pack__head">
+      <p class="pack__name">Лендинг Start</p>
+      <p class="pack__for">Для&nbsp;небольших команд и&nbsp;первого запуска рекламы</p>
+      <p class="pack__price">45 000 ₽</p>
+      </div>
+      <ul class="pack__specs">
+        <li><span>Срок</span><b>5–7 дней</b></li>
+        <li><span>Секций</span><b>7–8</b></li>
+        <li><span>Правок</span><b>1 круг</b></li>
+        <li><span>Поддержка</span><b>7 дней</b></li>
+      </ul>
+      <div class="pack__list">
+        <ul class="pack__list-col">
+          <li class="is-on">Анализ конкурентов</li>
+          <li class="is-on"><span>Квиз<button type="button" class="pack__tip" data-tip="Квиз — это короткая форма с вопросами, которая помогает узнать потребности клиента, предварительно рассчитать услугу и получить более качественную заявку." aria-label="Что такое квиз">?</button></span></li>
+          <li class="is-on">Настройка приёма заявок</li>
+          <li class="is-on">Яндекс&nbsp;Метрика и&nbsp;цели</li>
+        </ul>
+        <ul class="pack__list-col">
+          <li class="is-on">Проработка структуры и&nbsp;смыслов</li>
+          <li class="is-on">Подключение домена</li>
+          <li class="is-on">Индивидуальный дизайн</li>
+          <li class="is-on">Адаптация под&nbsp;мобильные устройства</li>
+        </ul>
+      </div>
+      <a class="btn btn--dark" href="#brief">Обсудить проект</a>
+    </div>
+    <div class="card pack pack--hl">
+      <div class="pack__head">
+      <span class="tag tag--lime pack__badge">Оптимально для&nbsp;запуска рекламы</span>
+      <p class="pack__name">Лендинг Plus</p>
+      <p class="pack__for">Полноценный сайт для&nbsp;привлечения и&nbsp;обработки заявок</p>
+      <p class="pack__price">85 000 ₽</p>
+      </div>
+      <ul class="pack__specs">
+        <li><span>Срок</span><b>7–10 рабочих дней</b></li>
+        <li><span>Секций</span><b>10–12</b></li>
+        <li><span>Правок</span><b>2 круга</b></li>
+        <li><span>Поддержка</span><b>1 месяц</b></li>
+      </ul>
+      <div class="pack__list">
+        <ul class="pack__list-col">
+          <li class="is-on">Всё&nbsp;из&nbsp;Start</li>
+          <li class="is-on">Проработка оффера</li>
+          <li class="is-on">Калькулятор по&nbsp;м²</li>
+          <li class="is-on">Расширенный квиз</li>
+          <li class="is-on">CRM-интеграция</li>
+        </ul>
+        <ul class="pack__list-col">
+          <li class="is-on">Аналитика действий</li>
+          <li class="is-on">Кейсы до/после</li>
+          <li class="is-on"><span>AI-консультант<button type="button" class="pack__tip" data-tip="AI-консультант отвечает на типовые вопросы посетителей, помогает подобрать услугу и подводит клиента к заявке даже вне рабочего времени." aria-label="Что такое AI-консультант">?</button></span></li>
+          <li class="is-on">Плавная анимация интерфейса</li>
+        </ul>
+      </div>
+      <a class="btn btn--lime" href="#brief">Начать проект</a>
+    </div>
+    <div class="card pack">
+      <div class="pack__head">
+      <p class="pack__name">Корпоративный сайт</p>
+      <p class="pack__for">Для&nbsp;компаний с&nbsp;большим портфолио и&nbsp;несколькими услугами</p>
+      <p class="pack__price">От&nbsp;150 000 ₽</p>
+      </div>
+      <ul class="pack__specs">
+        <li><span>Срок</span><b>12–15 рабочих дней</b></li>
+        <li><span>Страниц</span><b>от&nbsp;5</b></li>
+        <li><span>Правок</span><b>2 круга</b></li>
+        <li><span>Поддержка</span><b>2 месяца</b></li>
+      </ul>
+      <div class="pack__list">
+        <ul class="pack__list-col">
+          <li class="is-on">Всё&nbsp;из&nbsp;Plus</li>
+          <li class="is-on">Расширенная проработка дизайна</li>
+          <li class="is-on">Отдельные страницы услуг</li>
+        </ul>
+        <ul class="pack__list-col">
+          <li class="is-on">Каталог выполненных объектов</li>
+          <li class="is-on">Дополнительные информационные страницы</li>
+          <li class="is-on">Блог или&nbsp;раздел новостей</li>
+        </ul>
+      </div>
+      <a class="btn btn--dark" href="#brief">Получить расчёт</a>
+    </div>
+  </div>
+  <div class="packs__foot">
+    <ul class="packs__terms">
+      <li><b>50% предоплата</b><span>Остаток после завершения проекта</span></li>
+      <li><b>Первый экран на&nbsp;2-й день</b><span>Сразу согласуем визуальное направление</span></li>
+      <li><b>Поддержка после запуска</b><span>Сверх пакета&nbsp;— 8 000 ₽/мес</span></li>
+    </ul>
+    <p class="packs__guarantee"><b>Гарантия:</b> если визуальное направление после первого экрана не&nbsp;подойдёт, верну предоплату полностью.</p>
+  </div>
+</section>
+
+<!-- ===== 09.5 FAQ ===== -->
+<section class="frame--flow faq">
+  <h2 class="h2" id="faq" style="margin-bottom:clamp(20px,2.2vw,30px);text-align:center">Вопросы и&nbsp;ответы</h2>
+  <div class="faq__list">
+    <div class="faq__item">
+      <button class="faq__q" type="button" aria-expanded="false">
+        <span>Что если у&nbsp;меня нет текстов и&nbsp;фотографий?</span>
+        <span class="faq__icon" aria-hidden="true"></span>
+      </button>
+      <div class="faq__a-wrap">
+        <p class="faq__a">Это не&nbsp;проблема. Я&nbsp;помогу со&nbsp;структурой сайта, подготовлю тексты с&nbsp;помощью AI и&nbsp;подскажу, какие фотографии лучше использовать.</p>
+      </div>
+    </div>
+    <div class="faq__item">
+      <button class="faq__q" type="button" aria-expanded="false">
+        <span>Что входит в&nbsp;поддержку после запуска?</span>
+        <span class="faq__icon" aria-hidden="true"></span>
+      </button>
+      <div class="faq__a-wrap">
+        <p class="faq__a">После запуска проекта я&nbsp;буду помогать с&nbsp;заменой контента, исправлять возможные технические недочёты и&nbsp;отвечать на&nbsp;все ваши вопросы.</p>
+      </div>
+    </div>
+    <div class="faq__item">
+      <button class="faq__q" type="button" aria-expanded="false">
+        <span>Что делать, если после запуска понадобится что-то изменить?</span>
+        <span class="faq__icon" aria-hidden="true"></span>
+      </button>
+      <div class="faq__a-wrap">
+        <p class="faq__a">После запуска вы всегда сможете обратиться ко&nbsp;мне. Я&nbsp;помогу обновить тексты, фотографии, цены или внести другие изменения. При необходимости можно подключить ежемесячную поддержку.</p>
+      </div>
+    </div>
+    <div class="faq__item">
+      <button class="faq__q" type="button" aria-expanded="false">
+        <span>Как будут приходить заявки?</span>
+        <span class="faq__icon" aria-hidden="true"></span>
+      </button>
+      <div class="faq__a-wrap">
+        <p class="faq__a">В&nbsp;зависимости от&nbsp;выбранного тарифа заявки могут приходить в&nbsp;Telegram, на&nbsp;электронную почту или автоматически передаваться в&nbsp;CRM.</p>
+      </div>
+    </div>
+    <div class="faq__item">
+      <button class="faq__q" type="button" aria-expanded="false">
+        <span>Что если мне не&nbsp;понравится дизайн?</span>
+        <span class="faq__icon" aria-hidden="true"></span>
+      </button>
+      <div class="faq__a-wrap">
+        <p class="faq__a">Работа начинается с&nbsp;разработки первого экрана. Если предложенное направление не&nbsp;подойдёт, я&nbsp;внесу правки или верну предоплату согласно условиям гарантии.</p>
+      </div>
+    </div>
+    <div class="faq__item">
+      <button class="faq__q" type="button" aria-expanded="false">
+        <span>С&nbsp;чего начинается работа?</span>
+        <span class="faq__icon" aria-hidden="true"></span>
+      </button>
+      <div class="faq__a-wrap">
+        <p class="faq__a">После заявки мы&nbsp;обсуждаем ваш бизнес, определяем задачи и&nbsp;подходящий тариф. Затем я&nbsp;приступаю к&nbsp;разработке первого экрана и&nbsp;согласовываю визуальное направление перед дальнейшей работой.</p>
+      </div>
+    </div>
+  </div>
+  <div class="faq__cta">
+    <p class="faq__cta-text">Не&nbsp;нашли ответ на&nbsp;свой вопрос?<br>Напишите мне напрямую, отвечу за&nbsp;15&nbsp;минут.</p>
+    <div class="faq__cta-icons">
+      <a class="faq__cta-icon" href="https://t.me/maxlobyak" aria-label="Telegram">
+        <img class="faq__icon-img faq__icon-img--a" src="images/00-shapka/icon-telegram.svg" alt="">
+        <img class="faq__icon-img faq__icon-img--b" src="images/00-shapka/icon-telegram.svg" alt="">
+      </a>
+      <a class="faq__cta-icon" href="https://wa.me/375257950710" aria-label="WhatsApp">
+        <img class="faq__icon-img faq__icon-img--a" src="images/10-faq/WhatsApp.svg" alt="">
+        <img class="faq__icon-img faq__icon-img--b" src="images/10-faq/WhatsApp.svg" alt="">
+      </a>
+      <a class="faq__cta-icon" href="mailto:lobyak2401@mail.ru" aria-label="Email">
+        <span class="faq__mail faq__mail--a">@</span>
+        <span class="faq__mail faq__mail--b">@</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 10 БРИФ ===== -->
+<section class="frame--flow frame--inset" id="brief">
+  <div class="card-dark">
+    <div class="brief">
+      <div>
+        <h2 class="h2 h2--light">Ответьте на&nbsp;5&nbsp;вопросов&nbsp;— пришлю структуру и&nbsp;смету</h2>
+        <p class="lead lead--dark">Меньше минуты, ни&nbsp;к&nbsp;чему не&nbsp;обязывает.<br>Отвечу в&nbsp;течение часа.</p>
+      </div>
+      <div class="brief__box" id="briefBox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 11 ФУТЕР ===== -->
+<section class="frame--footer">
+  <div class="footer">
+    <p class="footer__legal">Лобяк Максим Андреевич, УНП AE6542605<br>109&nbsp;инспекция МНС по&nbsp;Фрунзенскому району г.&nbsp;Минска №2</p>
+    <div class="footer__links">
+      <a href="https://t.me/maxlobyak">Telegram</a>
+      <a href="https://wa.me/375257950710">WhatsApp</a>
+      <a href="mailto:lobyak2401@mail.ru?subject=%D0%A5%D0%BE%D1%87%D1%83%20%D0%BE%D0%B1%D1%81%D1%83%D0%B4%D0%B8%D1%82%D1%8C%20%D1%81%D0%B0%D0%B9%D1%82">lobyak2401@mail.ru</a>
+    </div>
+    <p class="footer__copy"><span id="year"></span></p>
+  </div>
+</section>
+
+<script>
+/* ── 1. Переключение стекла шапки + подтягивание при скролле.
+      Канвы больше нет, поэтому hero — обычный, всегда видимый
+      элемент; проверка "hero скрыт (мобильный дублируется)"
+      больше не нужна — убрана вместе с канвой. ── */
+(function () {
+  var hero = document.querySelector('.hero-card');
+  if (!hero) return;
+
+  function update() {
+    document.body.classList.toggle('header-scrolled', window.scrollY > 10);
+    var bottom = hero.getBoundingClientRect().bottom;
+    document.body.classList.toggle('header-on-light', bottom <= 90);
+  }
+
+  update();
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  window.addEventListener('load', update);
+})();
+
+/* ── 2. Бургер-меню ── */
+(function () {
+  document.querySelectorAll('.burger').forEach(function (btn) {
+    var menu = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!menu) return;
+    btn.addEventListener('click', function () {
+      var open = menu.classList.toggle('is-open');
+      btn.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    menu.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        menu.classList.remove('is-open');
+        btn.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  });
+})();
+
+/* ── 3. Бегущая строка инструментов.
+   Позицию ведём сами через requestAnimationFrame, а не CSS-анимацией:
+   смена animation-duration заставляет браузер пересчитать прогресс от
+   новой длительности, из-за чего лента прыгает. Здесь координата x
+   копится вручную (x -= скорость * прошедшее время), поэтому изменение
+   скорости продолжается ровно с той же точки, без рывка.
+   Ускорение при наведении — x3, само значение скорости подтягивается
+   плавно, чтобы не было ступеньки в момент входа/выхода курсора.
+   Плюс drag: во время перетаскивания авто-ход отключается, а после
+   отпускания бросок продолжается по инерции и затухает обратно в авто. ── */
+(function () {
+  var slider = document.querySelector('.slider');
+  var track = slider && slider.querySelector('.slider__track');
+  var group = track && track.querySelector('.slider__group');
+  if (!slider || !track || !group) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  /* Мобильная механика (≤720px): по ОДНОЙ карточке на экран, во всю
+     контентную часть. Три способа листать — стрелки .tools-arrow
+     (#toolsPrev/#toolsNext), свайп пальцем по слайдеру и автосвайп раз
+     в 5 секунд, плюс точки пагинации (#toolsDots, кликабельны — тап по
+     точке ведёт сразу на нужную карточку).
+     Бесконечность: раньше "по кругу" делался через индекс по модулю —
+     с последней карточки на первую лента ехала транзитом через ВСЕ
+     карточки назад (видимый скачок). Теперь честная бесшовная петля —
+     клонируем первую карточку и добавляем её копию в конец, последнюю
+     клонируем в начало (сентинелы). Едем через сентинел как через
+     обычный шаг, а когда анимация доедет до него — мгновенно, без
+     transition, телепортируемся на настоящую карточку с той же
+     позиции: глазом разницы не видно, т.к. клон пиксель-в-пиксель
+     совпадает с оригиналом. Ширина карточки = slider.clientWidth: на
+     мобильном bleed у .slider отключён отдельным CSS-правилом
+     (margin-left/right:0 в мобильном медиа-запросе), поэтому теперь это
+     и есть контентная ширина карточки. */
+  if (window.matchMedia('(max-width:720px)').matches) {
+    var realCards = Array.prototype.slice.call(group.querySelectorAll('.tool-card'));
+    var gap = 16; // тот же gap, что у .slider__group на мобильном в CSS
+    var count = realCards.length;
+
+    var firstClone = realCards[0].cloneNode(true);
+    var lastClone = realCards[count - 1].cloneNode(true);
+    firstClone.setAttribute('aria-hidden', 'true');
+    lastClone.setAttribute('aria-hidden', 'true');
+    group.appendChild(firstClone);
+    group.insertBefore(lastClone, realCards[0]);
+
+    // теперь: [0]=клон последней, [1..count]=настоящие, [count+1]=клон первой
+    var cards = Array.prototype.slice.call(group.querySelectorAll('.tool-card'));
+    var pageIndex = 1;
+    var cardW = 0;
+    var prevBtn = document.getElementById('toolsPrev');
+    var nextBtn = document.getElementById('toolsNext');
+    var dotsBox = document.getElementById('toolsDots');
+    var dots = [];
+
+    if (dotsBox) {
+      for (var i = 0; i < count; i++) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('aria-label', 'Карточка ' + (i + 1));
+        (function (realIdx) { b.addEventListener('click', function () { goTo(realIdx + 1); }); })(i);
+        dotsBox.appendChild(b);
+        dots.push(b);
+      }
+    }
+
+    function updateDots() {
+      var realIdx = (pageIndex - 1 + count) % count; // 0/count+1 (клоны) корректно сворачиваются в 0/count-1
+      for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('is-active', i === realIdx);
+    }
+
+    // защёлка от гонки состояний: без неё автосвайп, стрелки, свайп
+    // пальцем и точки могут вызвать goTo() ещё до того, как отработает
+    // текущий переход (.5s) — pageIndex перепрыгивает мимо проверки
+    // на сентинел в transitionend (она строго ===), коррекция не
+    // срабатывает, и лента навсегда уезжает за последнюю карточку
+    // в пустоту (баг «слайды пропадают после нескольких кругов»)
+    var isAnimating = false;
+
+    function move(animate) {
+      track.style.transition = animate ? 'transform .5s ease' : 'none';
+      track.style.transform = 'translateX(' + (-pageIndex * (cardW + gap)) + 'px)';
+      updateDots();
+      isAnimating = animate;
+    }
+
+    function goTo(index) {
+      if (isAnimating) return;
+      pageIndex = index;
+      move(true);
+    }
+
+    // доехали до сентинела — беззвучно телепортируемся на настоящую
+    // карточку в той же позиции (сработает только после анимации,
+    // move(false) в layout() transitionend не вызывает)
+    track.addEventListener('transitionend', function () {
+      isAnimating = false;
+      if (pageIndex === cards.length - 1) { pageIndex = 1; move(false); }
+      else if (pageIndex === 0) { pageIndex = count; move(false); }
+    });
+
+    function layout() {
+      cardW = slider.clientWidth;
+      cards.forEach(function (c) { c.style.flex = '0 0 ' + cardW + 'px'; });
+      move(false);
+    }
+
+    layout();
+    window.addEventListener('resize', layout);
+
+    if (prevBtn) prevBtn.addEventListener('click', function () { goTo(pageIndex - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { goTo(pageIndex + 1); });
+
+    // свайп: горизонтальная дистанция между touchstart/touchend, порог
+    // 40px — короткие/вертикальные касания (обычный скролл страницы)
+    // игнорируем
+    var touchX = 0, touchY = 0;
+    slider.addEventListener('touchstart', function (e) {
+      touchX = e.touches[0].clientX;
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+    slider.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - touchX;
+      var dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      goTo(dx < 0 ? pageIndex + 1 : pageIndex - 1);
+    }, { passive: true });
+
+    // автосвайп раз в 5 секунд, по кругу
+    setInterval(function () { goTo(pageIndex + 1); }, 5000);
+
+    return; // общий rAF-цикл бегущей строки ниже на мобильном не нужен
+  }
+
+  var SECONDS_PER_GROUP = 48;   // за столько лента проходит одну группу
+  var HOVER_FACTOR = 3;         // во сколько раз быстрее при наведении
+  var MAX_FLING = 3000;         // потолок скорости броска, px/s
+
+  var groupW = group.getBoundingClientRect().width;
+  var base = groupW / SECONDS_PER_GROUP;  // px в секунду
+  var speed = base;
+  var target = base;
+  var x = 0;
+  var last = null;
+
+  // состояние перетаскивания
+  var dragging = false, startX = 0, startPos = 0;
+  var prevX = 0, prevT = 0, velocity = 0, inertia = 0;
+
+  // приводим координату в диапазон (-groupW, 0] — работает и когда
+  // ленту утащили вправо в плюс, чего при авто-ходе не бывает
+  function wrap(v) {
+    if (!groupW) return v;
+    v = v % groupW;
+    if (v > 0) v -= groupW;
+    return v;
+  }
+
+  slider.addEventListener('mouseenter', function () { target = base * HOVER_FACTOR; });
+  slider.addEventListener('mouseleave', function () { target = base; });
+
+  slider.addEventListener('pointerdown', function (e) {
+    if (e.button) return;               // только левая кнопка
+    dragging = true;
+    inertia = 0;
+    velocity = 0;
+    startX = e.clientX;
+    startPos = x;
+    prevX = e.clientX;
+    prevT = e.timeStamp;
+    slider.classList.add('is-dragging');
+    try { slider.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  slider.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    x = wrap(startPos + (e.clientX - startX));
+    track.style.transform = 'translateX(' + x + 'px)';
+
+    var dt = (e.timeStamp - prevT) / 1000;
+    if (dt > 0) velocity = (e.clientX - prevX) / dt;
+    prevX = e.clientX;
+    prevT = e.timeStamp;
+  });
+
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    slider.classList.remove('is-dragging');
+    try { slider.releasePointerCapture(e.pointerId); } catch (err) {}
+    inertia = Math.max(-MAX_FLING, Math.min(MAX_FLING, velocity));
+  }
+  slider.addEventListener('pointerup', endDrag);
+  slider.addEventListener('pointercancel', endDrag);
+
+  window.addEventListener('resize', function () {
+    groupW = group.getBoundingClientRect().width;
+    base = groupW / SECONDS_PER_GROUP;
+    target = slider.matches(':hover') ? base * HOVER_FACTOR : base;
+  });
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    // ограничиваем dt: если вкладка была свёрнута, ts прыгнет на секунды вперёд
+    var dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+
+    if (dragging) {            // пока тащат — позицией управляет pointermove
+      requestAnimationFrame(frame);
+      return;
+    }
+
+    // плавное схождение к целевой скорости (экспоненциальное приближение)
+    speed += (target - speed) * Math.min(1, dt * 8);
+    // затухание инерции броска
+    inertia += (0 - inertia) * Math.min(1, dt * 3);
+
+    x -= speed * dt;      // постоянный ход влево
+    x += inertia * dt;    // остаточный бросок (может быть в любую сторону)
+    x = wrap(x);          // бесшовная петля
+
+    track.style.transform = 'translateX(' + x + 'px)';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ── 3.5. Слайдер отзывов.
+   В отличие от ленты инструментов здесь не свой transform-цикл, а
+   нативный горизонтальный скролл: браузер сам даёт инерцию на тач-
+   устройствах и «прилипание» через scroll-snap. Наш код только
+   двигает scrollLeft стрелками и поддерживает drag мышью. ── */
+(function () {
+  var track = document.getElementById('reviewsTrack');
+  if (!track) return;
+  var prev = document.getElementById('revPrev');
+  var next = document.getElementById('revNext');
+
+  // шаг = ширина карточки + зазор, читаем из макета, а не хардкодим
+  function step() {
+    var card = track.querySelector('.review');
+    if (!card) return 320;
+    var gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+    return card.getBoundingClientRect().width + gap;
+  }
+
+  function update() {
+    var max = track.scrollWidth - track.clientWidth;
+    prev.disabled = track.scrollLeft <= 2;
+    next.disabled = track.scrollLeft >= max - 2;
+  }
+
+  next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+  prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+
+  track.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  // перетаскивание мышью
+  var down = false, startX = 0, startScroll = 0, moved = false;
+
+  track.addEventListener('pointerdown', function (e) {
+    if (e.button) return;
+    down = true; moved = false;
+    startX = e.clientX;
+    startScroll = track.scrollLeft;
+    track.classList.add('is-dragging');
+    try { track.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  track.addEventListener('pointermove', function (e) {
+    if (!down) return;
+    var d = e.clientX - startX;
+    if (Math.abs(d) > 3) moved = true;
+    track.scrollLeft = startScroll - d;
+  });
+
+  function end(e) {
+    if (!down) return;
+    down = false;
+    track.classList.remove('is-dragging');
+    try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+    update();
+  }
+  track.addEventListener('pointerup', end);
+  track.addEventListener('pointercancel', end);
+
+  // если тащили — гасим клик, чтобы перетаскивание не срабатывало как нажатие
+  track.addEventListener('click', function (e) {
+    if (moved) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+})();
+
+/* ── 3.6. Лента конкурентов.
+   На десктопе — бесконечная лента (requestAnimationFrame, вертикальная,
+   translateY, измеряем высоту группы) — без изменений.
+   На мобильном (≤720px) — та же механика, что и у слайдера инструментов
+   (пункт 5 инспектора выше): пошаговая карусель, но по ОДНОЙ карточке
+   на экран (ширина = ширина .diff__viewport, то есть контентной части
+   карточки), а не бегущая строка — непрерывный translateX на маленьком
+   экране полз только один скриншот в один момент времени, но с той же
+   px/сек, что и на десктопной вертикальной ленте, из-за чего выглядел
+   заметно медленнее (там за то же SECONDS_PER_GROUP успевает
+   прокрутиться высота 6 скриншотов, а тут при ширине экрана в разы
+   меньше высоты — и путь короче, и совпадение с ощущением «медленно»).
+   Точки пагинации (.diff__dots) на мобильном скрыты в CSS и здесь не
+   создаются — карусель работает только на карточках первой группы,
+   дубль для бесшовной ленты в этом режиме не нужен. */
+(function () {
+  var viewport = document.querySelector('.diff__viewport');
+  var track = document.getElementById('diffTrack');
+  var group = track && track.querySelector('.diff__group');
+  var dotsBox = document.getElementById('diffDots');
+  if (!viewport || !track || !group || !dotsBox) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var mobileQuery = window.matchMedia('(max-width:720px)');
+  var count = group.querySelectorAll('.diff__shot').length;
+
+  if (mobileQuery.matches) {
+    // ИСПРАВЛЕНО (было два бага):
+    // 1) translateX считался как pageIndex*shotW без учёта gap:12px
+    //    между кадрами (.diff__group{gap:12px} в мобильном CSS) —
+    //    каждый шаг сдвигал ленту на 12px меньше, чем нужно, смещение
+    //    копилось от кадра к кадру ("листается неравномерно").
+    // 2) переход с последнего кадра на первый шёл через % без клонов —
+    //    transition:none жёстко на этом одном переходе из шести, пока
+    //    остальные пять ехали плавно (видимый скачок раз за цикл).
+    //    Ровно та же проблема, что чинили у слайдера инструментов
+    //    (см. блок 3 выше) — клоны-сентинелы туда, а сюда фикс
+    //    не перенесли. Переносим ту же схему: клонируем первый кадр
+    //    в конец и последний в начало, едем через сентинел как через
+    //    обычный шаг, а долетев — беззвучно телепортируемся на
+    //    настоящий кадр в той же позиции (клон пиксель-в-пиксель
+    //    совпадает с оригиналом, скачка не видно).
+    var gap = 12; // тот же gap, что у .diff__group на мобильном в CSS
+    var realShots = Array.prototype.slice.call(group.querySelectorAll('.diff__shot'));
+
+    var firstClone = realShots[0].cloneNode(true);
+    var lastClone = realShots[count - 1].cloneNode(true);
+    firstClone.setAttribute('aria-hidden', 'true');
+    lastClone.setAttribute('aria-hidden', 'true');
+    group.appendChild(firstClone);
+    group.insertBefore(lastClone, realShots[0]);
+
+    // теперь: [0]=клон последнего, [1..count]=настоящие, [count+1]=клон первого
+    var shots = Array.prototype.slice.call(group.querySelectorAll('.diff__shot'));
+    var pageIndex = 1;
+    var shotW = 0;
+    var isAnimating = false;
+
+    function move(animate) {
+      track.style.transition = animate ? 'transform .5s ease' : 'none';
+      track.style.transform = 'translateX(' + (-pageIndex * (shotW + gap)) + 'px)';
+      isAnimating = animate;
+    }
+
+    function goTo(index) {
+      if (isAnimating) return;
+      pageIndex = index;
+      move(true);
+    }
+
+    // доехали до сентинела — беззвучно телепортируемся на настоящий
+    // кадр в той же позиции (см. тот же приём в блоке 3)
+    track.addEventListener('transitionend', function () {
+      isAnimating = false;
+      if (pageIndex === shots.length - 1) { pageIndex = 1; move(false); }
+      else if (pageIndex === 0) { pageIndex = count; move(false); }
+    });
+
+    function layout() {
+      shotW = viewport.clientWidth;
+      shots.forEach(function (s) { s.style.width = shotW + 'px'; });
+      move(false);
+    }
+
+    layout();
+    window.addEventListener('resize', layout);
+
+    // свайп: тот же приём, что у слайдера инструментов (блок 3) —
+    // горизонтальная дистанция между touchstart/touchend, порог 40px
+    // и проверка dx>dy отсекают короткие/вертикальные касания (обычный
+    // скролл страницы), чтобы свайп не срабатывал случайно
+    var touchX = 0, touchY = 0;
+    viewport.addEventListener('touchstart', function (e) {
+      touchX = e.touches[0].clientX;
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+    viewport.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - touchX;
+      var dy = e.changedTouches[0].clientY - touchY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      goTo(dx < 0 ? pageIndex + 1 : pageIndex - 1);
+    }, { passive: true });
+
+    // защёлка isAnimating внутри goTo не даёт автосвайпу вызвать
+    // следующий шаг, пока текущий переход ещё едет
+    setInterval(function () { goTo(pageIndex + 1); }, 4000);
+
+    return; // непрерывный rAF-цикл ниже на мобильном не нужен
+  }
+
+  var SECONDS_PER_GROUP = 30;   // за столько лента проходит одну группу
+  var groupSize = 0, base = 0;
+  var speed = 0, target = 0, pos = 0, last = null;
+  var horizontal = false; // на десктоп-ветке ось всегда вертикальная
+
+  /* Пересчёт габаритов. Вызывается не только на resize, но и после
+     загрузки каждой картинки: если замерить размер группы до загрузки,
+     получится заниженное значение, петля начнёт срабатывать почти сразу
+     и лента будет дёргаться. */
+  function measure() {
+    var size = group.getBoundingClientRect().height;
+    if (!size) return;
+    groupSize = size;
+    base = groupSize / SECONDS_PER_GROUP;
+    target = base;
+    if (!speed) speed = base;
+    if (pos <= -groupSize) pos = 0;
+  }
+  measure();
+
+  Array.prototype.forEach.call(track.querySelectorAll('img'), function (im) {
+    if (!im.complete) im.addEventListener('load', measure);
+  });
+  window.addEventListener('load', measure);
+  window.addEventListener('resize', measure);
+
+  // точки пагинации: по одной на скриншот
+  var dots = [];
+  for (var i = 0; i < count; i++) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Скриншот ' + (i + 1));
+    (function (idx) {
+      b.addEventListener('click', function () { pos = -idx * (groupSize / count); });
+    })(i);
+    dotsBox.appendChild(b);
+    dots.push(b);
+  }
+
+  /* ускорение по ховеру отключено — лента всегда идёт с базовой
+     скоростью, наведение курсора её не разгоняет */
+  viewport.addEventListener('mouseenter', function () { target = base; });
+  viewport.addEventListener('mouseleave', function () { target = base; });
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    // ограничиваем dt: если вкладка была свёрнута, ts прыгнет вперёд
+    var dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+
+    // пока размер не измерен (картинки ещё грузятся) — ничего не двигаем
+    if (!groupSize) { requestAnimationFrame(frame); return; }
+
+    speed += (target - speed) * Math.min(1, dt * 8);
+    pos -= speed * dt;
+    if (pos <= -groupSize) pos += groupSize;      // бесшовная петля
+
+    track.style.transform = 'translateY(' + pos + 'px)';
+
+    var step = groupSize / count;
+    var idx = Math.round(-pos / step) % count;
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('is-active', i === idx);
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ── 3.7. Отсчёт цифр в блоке «Кто делает» от нуля.
+   Значения берутся из разметки, а не хардкодятся в скрипте — поменяешь
+   число в HTML, анимация подхватит новое. Поддерживаются дробные
+   («3.5%») и значения без числа («x2–x3»), последние просто не
+   анимируются. ── */
+(function () {
+  var stats = document.querySelector('.about__stats');
+  if (!stats) return;
+
+  /* Разбираем значение из разметки: ведущее число (можно дробное) + хвост.
+     «7» -> 7,        «3.5%» -> 3.5 + «%»,      «x2–x3» -> числа нет.
+     Значения без ведущей цифры («x2–x3») в отсчёте не участвуют и
+     остаются как есть — иначе показали бы «0». */
+  var items = [];
+  Array.prototype.forEach.call(stats.querySelectorAll('.stat__num'), function (el) {
+    var m = /^(\d+)([.,](\d+))?(.*)$/.exec(el.textContent.trim());
+    if (!m) return;                                  // числа нет — пропускаем
+    var sep = m[2] ? m[2][0] : '';
+    var dec = m[3] ? m[3].length : 0;
+    items.push({
+      el: el,
+      target: parseFloat(m[1] + (dec ? '.' + m[3] : '')),
+      dec: dec,
+      sep: sep,
+      suffix: m[4] || ''
+    });
+  });
+  if (!items.length) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // форматируем с тем же числом знаков и тем же разделителем, что в разметке
+  function fmt(v, it) {
+    var s = it.dec ? v.toFixed(it.dec) : String(Math.round(v));
+    if (it.dec && it.sep !== '.') s = s.replace('.', it.sep);
+    return s + it.suffix;
+  }
+
+  items.forEach(function (it) { it.el.textContent = fmt(0, it); });
+
+  var started = false;
+
+  function finalize() {
+    items.forEach(function (it) { it.el.textContent = fmt(it.target, it); });
+  }
+
+  function run() {
+    var DUR = 1400, start = null;
+    function frame(ts) {
+      if (start === null) start = ts;
+      var p = Math.min((ts - start) / DUR, 1);
+      var e = 1 - Math.pow(1 - p, 3);          // easeOutCubic: быстро, потом мягко
+      items.forEach(function (it) {
+        it.el.textContent = fmt(it.target * e, it);
+      });
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    /* страховка: если браузер перестанет выдавать кадры (свёрнутая
+       вкладка, режим энергосбережения), цифры застряли бы на середине.
+       Через DUR + запас принудительно ставим конечные значения. */
+    setTimeout(finalize, DUR + 400);
+  }
+
+  function check() {
+    if (started) return;
+    var r = stats.getBoundingClientRect();
+    if (r.top < window.innerHeight * 0.9 && r.bottom > 0) {
+      started = true;
+      run();
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    }
+  }
+
+  check();
+  window.addEventListener('scroll', check, { passive: true });
+  window.addEventListener('resize', check);
+  window.addEventListener('load', check);
+})();
+
+/* ── 4. Бриф-квиз ── */
+(function () {
+  var box = document.getElementById('briefBox');
+  if (!box) return;
+
+  var questions = [
+    { id: 'objects',  q: 'Какие объекты вы ремонтируете?',        options: ['Квартиры', 'Дома', 'Коммерческие помещения', 'Несколько направлений'] },
+    { id: 'city',     q: 'В каком городе или регионе работаете?', options: ['Москва и область', 'Санкт-Петербург и область', 'Несколько регионов', { free: true, placeholder: 'Свой вариант, например, Казань' }] },
+    { id: 'site',     q: 'Есть ли у вас сайт сейчас?',            options: ['Нет', 'Есть, но не приносит заявки', 'Есть, хотим полностью обновить'] },
+    { id: 'ads',      q: 'Откуда сейчас приходят клиенты?',       options: ['Яндекс Директ', 'Авито', 'Рекомендации', 'Несколько каналов', 'Рекламу ещё не запускали'] },
+    { id: 'timeline', q: 'Когда хотите запустить новый сайт?',    options: ['Как можно скорее', 'В течение 1–2 недель', 'В течение месяца', 'Пока изучаю варианты'] }
+  ];
+
+  var step = 0;
+  var answers = {};
+
+  function esc(str) {
+    return String(str).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function render() {
+    if (step >= questions.length) {
+      box.innerHTML =
+        '<div class="brief__done">' +
+          '<div class="brief__done-check">✓</div>' +
+          '<p class="brief__done-title">Отлично, спасибо!</p>' +
+          '<p class="brief__done-text">Свяжусь в течение часа. В рабочее время — быстрее.</p>' +
+        '</div>';
+      return;
+    }
+
+    var cur = questions[step];
+    var bars = questions.map(function (_, i) {
+      return '<span class="' + (i <= step ? 'is-on' : '') + '"></span>';
+    }).join('');
+    /* опции бывают строкой (обычная кнопка) или объектом { free:true }
+       (инлайн-поле ввода прямо в списке, без всплытия) */
+    var opts = cur.options.map(function (o) {
+      if (o && typeof o === 'object' && o.free) {
+        return '<div class="brief__opt-free">' +
+                 '<input type="text" class="brief__free-input" placeholder="' + esc(o.placeholder) + '" maxlength="60">' +
+                 '<button type="button" class="brief__free-btn" aria-label="Ответить">→</button>' +
+               '</div>';
+      }
+      return '<button type="button" data-value="' + esc(o) + '">' + esc(o) + '</button>';
+    }).join('');
+
+    box.innerHTML =
+      '<div class="brief__bars">' + bars + '</div>' +
+      '<p class="brief__counter">Вопрос ' + (step + 1) + ' из ' + questions.length + '</p>' +
+      '<p class="brief__q">' + esc(cur.q) + '</p>' +
+      '<div class="brief__opts">' + opts + '</div>' +
+      '<div class="brief__toast" id="briefToast">Выберите хотя&nbsp;бы один вариант</div>';
+
+    box.querySelectorAll('.brief__opts button[data-value]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        answers[cur.id] = btn.getAttribute('data-value');
+        step++;
+        render();
+      });
+    });
+
+    /* инлайн-поле "свой вариант" — уже в списке, ничего не открывается
+       по клику; подтверждение — по стрелке или Enter */
+    var freeRow = box.querySelector('.brief__opt-free');
+    if (freeRow) {
+      var freeInput = freeRow.querySelector('.brief__free-input');
+      var toast = document.getElementById('briefToast');
+      var toastTimer = null;
+      var showError = function () {
+        freeRow.classList.remove('is-error');
+        /* убираем и сразу навешиваем класс заново — иначе повторный клик
+           подряд не перезапустит CSS-анимацию тряски (браузер видит,
+           что класс не менялся, и просто не проигрывает keyframes снова) */
+        void freeRow.offsetWidth;
+        freeRow.classList.add('is-error');
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('is-visible');
+        }, 2600);
+      };
+      var submitFree = function () {
+        var val = freeInput.value.trim();
+        if (!val) { showError(); freeInput.focus(); return; }
+        answers[cur.id] = val;
+        step++;
+        render();
+      };
+      freeInput.addEventListener('input', function () {
+        freeRow.classList.remove('is-error');
+      });
+      freeInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') submitFree();
+      });
+      freeRow.querySelector('.brief__free-btn').addEventListener('click', submitFree);
+    }
+  }
+
+  render();
+})();
+
+/* ── 4.5. Аккордеон FAQ. Открыт максимум один вопрос за раз —
+      второй клик по открытому вопросу его закрывает. Высота анимации
+      идёт через max-height:scrollHeight, а не через display,
+      чтобы transition отрабатывал плавно. ── */
+(function () {
+  var items = document.querySelectorAll('.faq__item');
+  if (!items.length) return;
+
+  items.forEach(function (item) {
+    var btn = item.querySelector('.faq__q');
+    var wrap = item.querySelector('.faq__a-wrap');
+
+    btn.addEventListener('click', function () {
+      var isOpen = item.classList.contains('is-open');
+
+      items.forEach(function (other) {
+        other.classList.remove('is-open');
+        other.querySelector('.faq__q').setAttribute('aria-expanded', 'false');
+        other.querySelector('.faq__a-wrap').style.maxHeight = '';
+      });
+
+      if (!isOpen) {
+        item.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+      }
+    });
+  });
+})();
+
+/* ── 4.6. Подсказки в пакетах (Квиз, AI-консультант). На десктопе
+      всплывашка появляется по :hover из CSS — JS тут не нужен. Но на
+      тач-устройствах :hover не срабатывает, поэтому тап по кнопке
+      переключает класс .is-open, а тап в любом другом месте страницы
+      его закрывает. ── */
+(function () {
+  var tips = document.querySelectorAll('.pack__tip');
+  if (!tips.length) return;
+
+  tips.forEach(function (tip) {
+    tip.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasOpen = tip.classList.contains('is-open');
+      tips.forEach(function (t) { t.classList.remove('is-open'); });
+      if (!wasOpen) tip.classList.add('is-open');
+    });
+  });
+
+  document.addEventListener('click', function () {
+    tips.forEach(function (t) { t.classList.remove('is-open'); });
+  });
+})();
+
+/* ── 5. Год в футере ── */
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+<script src="../annotator-tool/annotator.js"></script>
+<!-- Экспресс-аудит. defer — скрипт не блокирует отрисовку hero, а разметку
+     модального окна создаёт лениво, при первом клике по кнопке. -->
+<script src="assets/js/site-audit.js" defer></script>
+</body>
+</html>

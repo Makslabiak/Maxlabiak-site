@@ -1,0 +1,577 @@
+/* =========================================================
+   ЭКСПРЕСС-АУДИТ САЙТА — модальное окно
+
+   Все классы в пространстве .sa-* — чтобы гарантированно не
+   пересечься с существующей вёрсткой index.html.
+
+   Переменные берём из :root страницы (--color-accent, --font-display
+   и т.д.), но с фолбэками — файл должен выглядеть прилично и в отрыве
+   от index.html, если его подключат на другой странице.
+   ========================================================= */
+
+.sa {
+  --sa-accent: var(--color-accent, #c9f24d);
+  --sa-bg: #111111;
+  --sa-bg-soft: rgba(255, 255, 255, .04);
+  --sa-border: rgba(255, 255, 255, .10);
+  --sa-border-hv: rgba(255, 255, 255, .22);
+  --sa-text: #ffffff;
+  --sa-muted: rgba(255, 255, 255, .55);
+  --sa-muted-strong: rgba(255, 255, 255, .75);
+  --sa-bad: #e5484d;
+  --sa-warn: #f5a524;
+  --sa-good: #7bc043;
+  --sa-radius: var(--radius-card, 20px);
+  --sa-radius-sm: var(--radius-block, 16px);
+  --sa-font-display: var(--font-display, 'Manrope', sans-serif);
+  --sa-font-text: var(--font-text, 'Inter', sans-serif);
+  --sa-pad: clamp(20px, 4vw, 40px);
+
+  position: fixed;
+  inset: 0;
+  z-index: 2000; /* выше шапки (1001) и бургер-меню (1000) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.sa[hidden] { display: none; }
+
+/* ── подложка ── */
+.sa__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+.sa.is-open .sa__overlay { opacity: 1; }
+
+/* ── окно ── */
+.sa__modal {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius);
+  color: var(--sa-text);
+  font-family: var(--sa-font-text);
+  opacity: 0;
+  transform: translateY(16px) scale(.985);
+  transition: opacity .35s ease, transform .35s cubic-bezier(.22, .61, .36, 1);
+  overflow: hidden;
+}
+.sa.is-open .sa__modal { opacity: 1; transform: none; }
+
+/* Прокручивается содержимое, а не окно целиком — иначе кнопка закрытия
+   уезжает вместе с длинным отчётом */
+.sa__scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--sa-pad);
+}
+
+.sa__close {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 3;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.sa__close:hover { background: rgba(255, 255, 255, .16); color: var(--sa-accent); }
+.sa__close:focus-visible { outline: 2px solid var(--sa-accent); outline-offset: 2px; }
+
+/* ── типографика внутри окна ── */
+.sa__title {
+  font: 500 clamp(24px, 3.6vw, 33px)/1.12 var(--sa-font-display);
+  letter-spacing: -.02em;
+  margin-bottom: 12px;
+  padding-right: 44px; /* место под крестик */
+}
+.sa__subtitle {
+  font: 400 clamp(15px, 1.6vw, 17px)/1.4 var(--sa-font-text);
+  color: var(--sa-muted-strong);
+  margin-bottom: 26px;
+}
+.sa__note {
+  font: 400 13px/1.4 var(--sa-font-text);
+  color: var(--sa-muted);
+}
+.sa__section-title {
+  font: 500 clamp(18px, 2.2vw, 21px)/1.2 var(--sa-font-display);
+  letter-spacing: -.01em;
+  margin-bottom: 14px;
+}
+
+/* ── кнопки ── */
+.sa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 54px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: var(--radius-button, 30px);
+  font: 500 16px/1 var(--sa-font-display);
+  letter-spacing: -.3px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .2s, color .2s, opacity .2s;
+}
+.sa-btn--primary { background: var(--sa-accent); color: #000; }
+.sa-btn--primary:hover { background: #fff; }
+.sa-btn--ghost {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  border: 1px solid var(--sa-border);
+}
+.sa-btn--ghost:hover { border-color: var(--sa-border-hv); color: var(--sa-accent); }
+.sa-btn--wide { width: 100%; }
+.sa-btn[disabled] { opacity: .5; cursor: default; }
+.sa-btn:focus-visible { outline: 2px solid var(--sa-accent); outline-offset: 2px; }
+
+.sa-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--sa-muted-strong);
+  font: 400 14px/1.4 var(--sa-font-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color .2s;
+}
+.sa-link:hover { color: var(--sa-accent); }
+
+/* ── поля ввода ── */
+.sa-field { margin-bottom: 14px; }
+.sa-field__label {
+  display: block;
+  font: 400 13px/1.2 var(--sa-font-text);
+  color: var(--sa-muted);
+  margin-bottom: 7px;
+}
+.sa-input,
+.sa-textarea {
+  width: 100%;
+  background: var(--sa-bg-soft);
+  border: 1px solid var(--sa-border);
+  border-radius: 14px;
+  color: #fff;
+  font: 400 16px/1.3 var(--sa-font-text); /* 16px — иначе iOS зумит страницу при фокусе */
+  padding: 15px 18px;
+  transition: border-color .2s, background .2s;
+}
+.sa-input { height: 54px; }
+.sa-textarea { min-height: 88px; resize: vertical; }
+.sa-input::placeholder,
+.sa-textarea::placeholder { color: rgba(255, 255, 255, .35); }
+.sa-input:focus,
+.sa-textarea:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+  background: rgba(255, 255, 255, .07);
+}
+.sa-input.is-error { border-color: var(--sa-bad); }
+
+.sa-error {
+  display: none;
+  font: 400 13px/1.35 var(--sa-font-text);
+  color: var(--sa-bad);
+  margin-top: 8px;
+}
+.sa-error.is-visible { display: block; }
+
+.sa-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font: 400 13px/1.45 var(--sa-font-text);
+  color: var(--sa-muted);
+  cursor: pointer;
+  margin: 4px 0 18px;
+}
+.sa-check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--sa-accent); flex-shrink: 0; }
+
+/* ═════════════ ШАГ 1 — ВВОД ═════════════ */
+
+.sa-start__row { display: flex; gap: 10px; flex-wrap: wrap; }
+.sa-start__row .sa-input { flex: 1 1 220px; }
+.sa-start__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 16px;
+}
+
+/* ═════════════ ЭКРАН АНАЛИЗА ═════════════ */
+
+.sa-loading__domain {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--sa-accent);
+}
+
+.sa-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, .08);
+  overflow: hidden;
+  margin: 26px 0 28px;
+}
+.sa-progress__bar {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: var(--sa-accent);
+  transition: width .6s cubic-bezier(.4, 0, .2, 1);
+}
+
+.sa-stages { display: flex; flex-direction: column; gap: 4px; }
+.sa-stage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font: 400 15px/1.3 var(--sa-font-text);
+  color: rgba(255, 255, 255, .38);
+  transition: color .3s ease, background .3s ease;
+}
+.sa-stage.is-active { color: #fff; background: var(--sa-bg-soft); }
+.sa-stage.is-done { color: var(--sa-muted-strong); }
+.sa-stage.is-error { color: var(--sa-bad); }
+
+.sa-stage__dot {
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  position: relative;
+  transition: background .3s ease, border-color .3s ease;
+}
+.sa-stage.is-active .sa-stage__dot {
+  border-color: var(--sa-accent);
+  animation: sa-pulse 1.4s ease-in-out infinite;
+}
+.sa-stage.is-done .sa-stage__dot {
+  background: var(--sa-accent);
+  border-color: var(--sa-accent);
+}
+/* Галочка — две линии через ::after, без иконочного шрифта */
+.sa-stage.is-done .sa-stage__dot::after {
+  content: '';
+  position: absolute;
+  left: 5px; top: 2px;
+  width: 5px; height: 9px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+@keyframes sa-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 242, 77, .35); }
+  50%      { box-shadow: 0 0 0 6px rgba(201, 242, 77, 0); }
+}
+
+/* ═════════════ ЭКРАН РЕЗУЛЬТАТА ═════════════ */
+
+.sa-result__head {
+  display: flex;
+  gap: clamp(18px, 3vw, 28px);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.sa-result__domain {
+  font: 500 clamp(19px, 2.4vw, 23px)/1.2 var(--sa-font-display);
+  word-break: break-word;
+}
+.sa-result__date { font: 400 13px/1.3 var(--sa-font-text); color: var(--sa-muted); margin-top: 5px; }
+.sa-result__summary {
+  font: 400 clamp(15px, 1.7vw, 17px)/1.45 var(--sa-font-text);
+  color: var(--sa-muted-strong);
+  margin-top: 14px;
+}
+
+/* круговой индикатор — чистый SVG, без библиотек */
+.sa-gauge { position: relative; width: 116px; height: 116px; flex-shrink: 0; }
+.sa-gauge svg { transform: rotate(-90deg); display: block; }
+.sa-gauge__track { stroke: rgba(255, 255, 255, .1); }
+.sa-gauge__value {
+  stroke: var(--sa-accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.1s cubic-bezier(.3, .8, .3, 1), stroke .4s;
+}
+.sa-gauge.is-bad .sa-gauge__value { stroke: var(--sa-bad); }
+.sa-gauge.is-warn .sa-gauge__value { stroke: var(--sa-warn); }
+.sa-gauge__num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font: 500 30px/1 var(--sa-font-display);
+}
+.sa-gauge__num span { font: 400 11px/1 var(--sa-font-text); color: var(--sa-muted); margin-top: 5px; }
+
+.sa-shot {
+  width: 100%;
+  max-width: 190px;
+  border-radius: 12px;
+  border: 1px solid var(--sa-border);
+  display: block;
+  margin-top: 20px;
+}
+
+.sa-notice {
+  display: flex;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  background: rgba(245, 165, 36, .1);
+  border: 1px solid rgba(245, 165, 36, .28);
+  font: 400 13px/1.4 var(--sa-font-text);
+  color: rgba(255, 255, 255, .8);
+  margin-top: 20px;
+}
+
+.sa-divider { height: 1px; background: var(--sa-border); margin: 30px 0 26px; }
+
+/* ── карточки категорий ── */
+.sa-cats {
+  display: grid;
+  /* 180px, а не 150: при 150 пять карточек встают в 4+1, что читается
+     как недоделанная сетка. При 180 получается ровное 3+2. */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.sa-cat {
+  background: var(--sa-bg-soft);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  padding: 16px 17px;
+  transition: border-color .2s;
+}
+.sa-cat:hover { border-color: var(--sa-border-hv); }
+.sa-cat__top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sa-cat__name { font: 400 14px/1.2 var(--sa-font-text); color: var(--sa-muted-strong); }
+.sa-cat__score { font: 500 21px/1 var(--sa-font-display); }
+.sa-cat__bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .1); margin: 11px 0 9px; overflow: hidden; }
+.sa-cat__fill { height: 100%; width: 0; border-radius: 2px; transition: width .9s cubic-bezier(.3, .8, .3, 1); }
+.sa-cat__note { font: 400 12px/1.35 var(--sa-font-text); color: var(--sa-muted); }
+
+.sa-good  { color: var(--sa-good); }
+.sa-warn  { color: var(--sa-warn); }
+.sa-bad   { color: var(--sa-bad); }
+.sa-fill-good { background: var(--sa-good); }
+.sa-fill-warn { background: var(--sa-warn); }
+.sa-fill-bad  { background: var(--sa-bad); }
+
+/* ── проблемы ── */
+.sa-issues { display: flex; flex-direction: column; gap: 10px; }
+.sa-issue {
+  background: var(--sa-bg-soft);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  padding: 18px 19px;
+  /* stagger появления задаётся инлайн через --sa-i */
+  opacity: 0;
+  transform: translateY(8px);
+  animation: sa-in .45s ease forwards;
+  animation-delay: calc(var(--sa-i, 0) * 70ms);
+}
+@keyframes sa-in { to { opacity: 1; transform: none; } }
+
+.sa-issue__top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; flex-wrap: wrap; }
+.sa-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 100px;
+  font: 500 11px/1 var(--sa-font-display);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.sa-badge--critical { background: rgba(229, 72, 77, .18); color: #ff8085; }
+.sa-badge--high     { background: rgba(245, 165, 36, .16); color: #ffbb55; }
+.sa-badge--medium   { background: rgba(255, 255, 255, .1); color: rgba(255, 255, 255, .8); }
+.sa-badge--low      { background: rgba(255, 255, 255, .06); color: var(--sa-muted); }
+.sa-issue__metric { font: 400 12px/1 var(--sa-font-text); color: var(--sa-muted); margin-left: auto; }
+.sa-issue__title { font: 500 16px/1.3 var(--sa-font-display); margin-bottom: 7px; }
+.sa-issue__text { font: 400 14px/1.45 var(--sa-font-text); color: var(--sa-muted-strong); }
+.sa-issue__impact,
+.sa-issue__fix {
+  font: 400 13px/1.45 var(--sa-font-text);
+  color: var(--sa-muted);
+  margin-top: 9px;
+  padding-left: 13px;
+  border-left: 2px solid var(--sa-border);
+}
+.sa-issue__fix { border-left-color: rgba(201, 242, 77, .4); }
+
+/* ── «что сделано хорошо» — компактный однострочник ──
+   Намеренно без заголовка секции, без карточек и без зелёных галочек:
+   раньше это был отдельный крупный блок прямо перед CTA, и он гасил
+   тревогу от списка проблем выше вместо того, чтобы подвести к продаже. */
+.sa-positives-line {
+  font: 400 12.5px/1.5 var(--sa-font-text);
+  color: var(--sa-muted);
+  margin-top: 18px;
+}
+.sa-positives-line__label {
+  color: rgba(255, 255, 255, .38);
+  margin-right: 2px;
+}
+
+/* ── сравнение с конкурентами в нише ──
+   Показывается только когда сервер прислал непустой report.benchmark —
+   то есть только когда в конфиге реальные цифры конкурентов, не выдумка. */
+.sa-bench { display: flex; flex-direction: column; gap: 10px; }
+.sa-bench__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 14px;
+  padding: 13px 16px;
+  border-radius: var(--sa-radius-sm);
+  background: var(--sa-bg-soft);
+  border: 1px solid var(--sa-border);
+}
+/* Строки, где клиент отстаёт от ниши, выделены тёплой рамкой — это и есть
+   продающая часть блока, остальное просто для полноты картины */
+.sa-bench__row.is-weak {
+  border-color: rgba(229, 72, 77, .35);
+  background: rgba(229, 72, 77, .06);
+}
+.sa-bench__label { font: 400 14px/1.35 var(--sa-font-text); color: var(--sa-muted-strong); flex: 1 1 180px; }
+.sa-bench__values { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.sa-bench__values b { font: 500 15px/1 var(--sa-font-display); color: #fff; }
+.sa-bench__vs { font: 400 11px/1 var(--sa-font-text); color: var(--sa-muted); }
+.sa-bench__niche { font: 400 13px/1 var(--sa-font-text); color: var(--sa-muted); }
+.sa-bench__row.is-weak .sa-bench__values b { color: #ff8085; }
+
+/* ── сворачиваемый блок метрик ── */
+.sa-collapse { border: 1px solid var(--sa-border); border-radius: var(--sa-radius-sm); overflow: hidden; }
+.sa-collapse__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: none;
+  border: 0;
+  color: #fff;
+  font: 500 15px/1.2 var(--sa-font-display);
+  text-align: left;
+  cursor: pointer;
+  transition: background .2s;
+}
+.sa-collapse__head:hover { background: var(--sa-bg-soft); }
+.sa-collapse__arrow { transition: transform .3s ease; color: var(--sa-muted); }
+.sa-collapse.is-open .sa-collapse__arrow { transform: rotate(180deg); }
+.sa-collapse__body { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+.sa-collapse__inner { padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.sa-metric { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; }
+.sa-metric__name { font: 400 14px/1.3 var(--sa-font-text); }
+.sa-metric__hint { display: block; font-size: 12px; color: var(--sa-muted); margin-top: 3px; }
+.sa-metric__value { font: 500 15px/1 var(--sa-font-display); white-space: nowrap; }
+
+/* ── продающий блок ── */
+.sa-cta {
+  background: var(--sa-bg-soft);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius);
+  padding: clamp(20px, 3vw, 28px);
+  margin-top: 30px;
+}
+.sa-cta__title { font: 500 clamp(20px, 2.6vw, 25px)/1.18 var(--sa-font-display); letter-spacing: -.02em; }
+.sa-cta__text { font: 400 15px/1.45 var(--sa-font-text); color: var(--sa-muted-strong); margin: 12px 0 20px; }
+.sa-cta__buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.sa-cta__note { font: 400 13px/1.4 var(--sa-font-text); color: var(--sa-muted); margin-top: 14px; }
+
+/* ── финальные экраны ── */
+.sa-final { text-align: center; padding: clamp(20px, 5vw, 48px) 0; }
+.sa-final__icon {
+  width: 62px; height: 62px;
+  margin: 0 auto 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(201, 242, 77, .14);
+  border: 1px solid rgba(201, 242, 77, .4);
+  color: var(--sa-accent);
+  font-size: 26px;
+}
+.sa-final__icon--error { background: rgba(229, 72, 77, .14); border-color: rgba(229, 72, 77, .4); color: #ff8085; }
+.sa-final__title { font: 500 clamp(21px, 2.8vw, 26px)/1.2 var(--sa-font-display); margin-bottom: 12px; }
+.sa-final__text { font: 400 15px/1.5 var(--sa-font-text); color: var(--sa-muted-strong); max-width: 400px; margin: 0 auto 24px; }
+
+/* ═════════════ АДАПТИВ ═════════════ */
+
+/* 720px — общий мобильный порог сайта. Ниже — окно во весь экран:
+   на телефоне отчёт длинный, и рамки по краям только съедают место. */
+@media (max-width: 720px) {
+  .sa { padding: 0; align-items: stretch; }
+  .sa__modal {
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+    border: 0;
+    transform: translateY(28px);
+  }
+  .sa__scroll {
+    /* env(safe-area-inset-bottom) — чтобы последняя кнопка не пряталась
+       под системной полосой iPhone, а клавиатура не закрывала поле */
+    padding-bottom: calc(var(--sa-pad) + env(safe-area-inset-bottom, 0px) + 12px);
+  }
+  .sa-result__head { gap: 16px; }
+  .sa-gauge { width: 96px; height: 96px; }
+  .sa-gauge__num { font-size: 26px; }
+  .sa-cta__buttons .sa-btn { width: 100%; }
+}
+
+@media (max-width: 450px) {
+  .sa-cats { grid-template-columns: 1fr 1fr; }
+  .sa-start__row .sa-input { flex-basis: 100%; }
+  .sa-start__row .sa-btn { width: 100%; }
+}
+
+/* Уважаем системную настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce) {
+  .sa__overlay,
+  .sa__modal,
+  .sa-progress__bar,
+  .sa-gauge__value,
+  .sa-cat__fill,
+  .sa-collapse__body { transition-duration: .01ms !important; }
+  .sa-issue { animation: none; opacity: 1; transform: none; }
+  .sa-stage.is-active .sa-stage__dot { animation: none; }
+}
+
+/* Пока окно открыто — фон не прокручивается */
+body.sa-lock { overflow: hidden; }

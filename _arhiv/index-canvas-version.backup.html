@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dars studio — сайты под рекламу для ремонтных компаний</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   ТОКЕНЫ (расширены относительно tokens.css — добавлены
+   поверхность страницы, тёмные секции, светлая тема карточек,
+   цвета PageSpeed и радиусы 16/14px)
+   ========================================================= */
+:root{
+  --color-white:#ffffff;
+  --color-black:#000000;
+  --color-accent:#c9f24d;
+  --color-surface:#f5f5f0;   /* фон страницы */
+  --color-dark:#111111;      /* тёмные секции и highlight-карточки */
+  --color-card:#ffffff;
+
+  --glass-bg:rgba(255,255,255,.2);
+  --glass-blur:blur(10px);
+  --glass-dark-bg:rgba(0,0,0,.35);
+  --glass-dark-border:rgba(255,255,255,.12);
+
+  --border-light:rgba(0,0,0,.06);
+  --border-light-hv:rgba(0,0,0,.15);
+  --border-dark:rgba(255,255,255,.10);
+  --border-dark-hv:rgba(255,255,255,.25);
+
+  --muted-light:rgba(0,0,0,.5);
+  --muted-dark:rgba(255,255,255,.5);
+
+  --color-bad:#e5484d;
+  --color-good:#3a9900;
+
+  --font-display:'Manrope',sans-serif;
+  --font-text:'Inter',sans-serif;
+
+  --radius-card:20px;
+  --radius-block:16px;
+  --radius-tile:14px;
+  --radius-pill:100px;
+  --radius-button:30px;
+
+  --card-inset:20px;
+  --content-pad-x:70px;
+  --sec-pad-y:100px;
+
+  --ease-fast:.2s ease;
+  --ease-panel:.3s ease;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-y:scroll}
+body{background:var(--color-surface);overflow-x:hidden;font-family:var(--font-text)}
+img{display:block}
+
+/* =========================================================
+   КАНВА. Общая для всех секций: ширина 1440, transform-origin 0 0,
+   масштаб = clientWidth / 1440. Высоту .stage выставляет JS.
+   .frame--hero — фиксированная высота (absolute-раскладка).
+   .frame--flow — высота auto (flex/grid внутри канвы).
+   ========================================================= */
+.stage{position:relative;width:100%;overflow:hidden}
+.frame{position:relative;width:1440px;transform-origin:0 0}
+.frame--hero{height:800px}
+.frame--flow{height:auto;padding:var(--sec-pad-y) var(--content-pad-x)}
+/* секции-карточки (тёмные/лаймовые) прижаты к инсету 20px, а не к 70px */
+.frame--inset{padding:0 var(--card-inset) var(--sec-pad-y)}
+
+/* ============ HERO — без изменений ============ */
+.hero   { position: absolute; left: 20px; top: 20px; width: 1400px; height: 760px;
+          border-radius: 20px; overflow: hidden;
+          background: linear-gradient(135deg, #000000, #242424); }
+.hero__img { position: absolute; right: 0; bottom: 0; width: 86%; height: auto;
+             max-width: none; display: block; transform: translateX(100px); }
+
+/* ============ ГЛОБАЛЬНАЯ ШАПКА ============
+   Вынесена из канвы совсем — иначе как и со sticky, transform
+   на родителе (.frame) сломал бы position:fixed (fixed внутри
+   трансформированного предка считается не от вьюпорта, а от
+   этого предка). Поэтому шапка — сиблинг .stage, лежит прямо в body.
+
+   ≥720 (десктоп + компакт-планшет): ВОЗВРАЩАЮ оригинальную композицию —
+   три отдельные плавающие «таблетки» (лого / меню / контакты), каждая
+   сама по себе position:fixed, БЕЗ общей полосы-подложки — как было
+   на фото, просто закреплено. <header> здесь ничего не рисует сама,
+   display:contents убирает её из вёрстки, остаются только дети.
+
+   <720 (мобильный): здесь наоборот — цельная тёмная стеклянная плашка
+   (см. медиа-запрос ниже), это сознательно оставлено по просьбе. */
+.site-header{display:contents}
+
+.brand { position:fixed; top:63px; left:70px; z-index:1001;
+         display: flex; align-items: center; gap: 14px; cursor: pointer;
+         height: 51px; padding: 0 24px 0 0; border-radius: 100px;
+         background: rgba(255,255,255,.2);
+         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+         transition: background .3s, border-color .3s, top .35s ease; }
+.brand__avatar { width: 51px; height: 51px; border-radius: 50%; object-fit: cover; display: block; }
+.brand__name { color: #fff; white-space: nowrap; transition: color .2s;
+               font: 500 25px/1 'Manrope', sans-serif; letter-spacing: -.49px; }
+.brand:hover .brand__name { color: #c9f24d; }
+
+/* переключение стекла: над hero (тёмный фон) — светлое стекло как
+   было; ниже, где фон страницы светлый (--color-surface), белое
+   стекло стало бы невидимым — JS переключает класс .header-on-light
+   на body, и это стекло становится тёмным (тот же рецепт, что у
+   бургер-меню). Только для ≥720 — на мобильном плашка и так всегда
+   тёмная, переключать нечего. */
+body.header-on-light .brand,
+body.header-on-light .nav,
+body.header-on-light .compact-head .contact-pill,
+body.header-on-light .burger {
+  background: var(--glass-dark-bg);
+  border: 1px solid var(--glass-dark-border);
+}
+
+/* при старте скролла вниз шапка подтягивается ближе к краю экрана
+   (63px → 30px), с задержкой за счёт transition на top у самих
+   плавающих элементов — не резкий скачок, а плавное подтягивание */
+body.header-scrolled .brand,
+body.header-scrolled .nav,
+body.header-scrolled .site-header__actions {
+  top: 30px;
+}
+
+.site-header__actions{ position:fixed; top:63px; right:70px; z-index:1001;
+                        display:flex; align-items:center; gap:18px;
+                        transition: top .35s ease; }
+
+.contact { display: flex; align-items: center; height: 51px; padding: 0 28px;
+           border-radius: 100px; background: #c9f24d; color: #000; text-decoration: none;
+           white-space: nowrap; font: 500 18px/1 'Manrope', sans-serif; letter-spacing: -.37px;
+           transition: opacity .2s; }
+.contact:hover { opacity: .82; }
+
+.tg-btn { width: 51px; height: 51px; border-radius: 50%; background: #c9f24d;
+          display: flex; align-items: center; justify-content: center;
+          position: relative; overflow: hidden; flex-shrink:0; }
+/* две копии иконки друг под другом: на ховере первая улетает
+   в правый верхний угол (сдвиг+поворот+затухание), вторая
+   прилетает на её место из левого нижнего угла — overflow:hidden
+   на кнопке подрезает обе ровно по кругу */
+.tg-btn__icon { position: absolute; top: 50%; left: 50%; width: 21px; height: 21px;
+                display: block; filter: brightness(0);
+                transition: transform .45s cubic-bezier(.4,0,.2,1), opacity .35s ease; }
+.tg-btn__icon--a { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+.tg-btn__icon--b { transform: translate(-190%, 190%) rotate(-25deg); opacity: 0; }
+.tg-btn:hover .tg-btn__icon--a { transform: translate(190%, -190%) rotate(25deg); opacity: 0; }
+.tg-btn:hover .tg-btn__icon--b { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+
+/* .nav — своя стеклянная пилюля, закреплена по центру экрана
+   (left:50%+translateX, а не magic-число из старой канвы 1440 — так
+   она реально центрируется на любой ширине вьюпорта) */
+.nav { position:fixed; top:63px; left:50%; transform:translateX(-50%); z-index:1001;
+       display: flex; align-items: center; height: 51px; padding: 0 37px; border-radius: 100px;
+       background: rgba(255,255,255,.2);
+       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+       transition: background .3s, border-color .3s, top .35s ease;
+       gap: 24px; color: #fff; white-space: nowrap;
+       font: 500 18px/1 'Manrope', sans-serif; letter-spacing: -.37px; }
+.nav a, .btn-ghost { color: #fff; text-decoration: none; }
+.nav a:hover, .btn-ghost:hover { color: #c9f24d; }
+
+.badge { position: absolute; left: 70px; top: 151px; color: #fff; white-space: nowrap;
+         font: 400 14px/1.3 'Inter', sans-serif; opacity: .7; }
+.badge b { font-weight: 900; }
+
+.headline { position: absolute; left: 70px; top: 188px; width: 644px; color: #fff;
+            font: 500 70px/70px 'Manrope', sans-serif; letter-spacing: -1.4px; }
+.headline span { color: #c9f24d; }
+
+.desc { position: absolute; left: 70px; top: 419px; width: 458px; color: #fff;
+        font: 400 18px/1.3 'Inter', sans-serif; opacity: .7; }
+
+.btn-primary, .btn-ghost {
+  position: absolute; display: inline-flex; align-items: center; justify-content: center;
+  height: 52px; padding: 0 30px; border-radius: 26px; text-decoration: none;
+  white-space: nowrap; transition: background .2s, color .2s;
+}
+.btn-primary { left: 72px; top: 536px; background: #fff; color: #000;
+               font: 400 18px/1 'Inter', sans-serif; }
+.btn-primary:hover { background: #c9f24d; }
+
+.btn-ghost { left: 340px; top: 536px; background: rgba(255,255,255,.2);
+             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+             color: #fff; font: 500 16px/1 'Manrope', sans-serif; letter-spacing: -.32px; }
+.btn-ghost:hover { color: #c9f24d; }
+
+.cap { position: absolute; font: 400 12px/1.3 'Inter', sans-serif;
+       color: rgba(255,255,255,.65); white-space: normal; }
+.cap b { font-weight: 500; color: rgba(255,255,255,.9); }
+.cap--primary { left: 82px;  top: 596px; max-width: 192px; }
+.cap--ghost   { left: 350px; top: 596px; max-width: 204px; }
+
+.stats { position: absolute; left: 70px; top: 682px; display: flex; align-items: flex-end;
+         gap: 22px; color: #fff; white-space: nowrap;
+         font: 400 18px/1.3 'Inter', sans-serif; }
+.stats i { position: relative; display: block; width: 0; height: 22px; }
+.stats i::before { content: ''; position: absolute; left: 0; top: 0;
+                   width: 1px; height: 22px; background: #fff; }
+
+/* display:none по умолчанию — раньше это давал невидимый предок
+   (.frame--hero скрывался целиком на мобильном), теперь шапка
+   глобальная и не имеет такого предка, поэтому скрываем явно */
+.compact-head { display: none; align-items: center; gap: 14px; }
+.compact-head .contact-pill {
+  display: inline-flex; align-items: center; height: 59px; padding: 0 32px;
+  border-radius: 100px; background: rgba(255,255,255,.2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: background .3s, border-color .3s, color .2s;
+  color: #fff; text-decoration: none; white-space: nowrap;
+  font: 500 21px/1 'Manrope', sans-serif; letter-spacing: -.43px;
+}
+.compact-head .contact-pill:hover { color: #c9f24d; }
+
+/* группы для <720 — скрыты по умолчанию (раньше прятал предок .mobile,
+   которого больше нет), показываются в мобильном медиа-запросе ниже */
+.mobile__brand { display: none; }
+.mobile__head-right { display: none; }
+
+.burger {
+  display: flex; align-items: center; justify-content: center;
+  width: 59px; height: 59px; border-radius: 50%; border: 0; cursor: pointer;
+  background: rgba(255,255,255,.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: background .3s, border-color .3s;
+}
+.burger--sm { width: 53px; height: 53px; }
+.burger__lines { position: relative; width: 24px; height: 16px; }
+.burger__lines span { position: absolute; left: 0; width: 24px; height: 2px; background: #fff;
+                       border-radius: 2px; transition: transform .2s, opacity .2s; }
+.burger__lines span:nth-child(1) { top: 0; }
+.burger__lines span:nth-child(2) { top: 7px; }
+.burger__lines span:nth-child(3) { top: 14px; }
+.burger.is-open .burger__lines span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.is-open .burger__lines span:nth-child(2) { opacity: 0; }
+.burger.is-open .burger__lines span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* fixed, а не absolute: раньше висело внутри канвы/карточки и
+   inset считался от неё, теперь панель одна на все брейкпоинты
+   и висит прямо от вьюпорта — тот же отступ 20px, что у шапки */
+.mobile-menu { display: none; position: fixed; inset: 20px; z-index: 1000;
+               flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+               border-radius: 20px; background: rgba(0,0,0,.35);
+               border: 1px solid rgba(255,255,255,.12);
+               backdrop-filter: blur(24px) saturate(140%); -webkit-backdrop-filter: blur(24px) saturate(140%);
+               opacity: 0; transform: translateX(100%); pointer-events: none;
+               transition: opacity .3s ease, transform .3s ease; }
+.mobile-menu.is-open { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.mobile-menu a { padding: 10px 24px; border-radius: 14px; color: #fff; text-decoration: none;
+                 font: 500 44px/1.1 'Manrope', sans-serif; letter-spacing: -.02em; }
+.mobile-menu a:hover { background: rgba(255,255,255,.1); color: #c9f24d; }
+
+/* =========================================================
+   ОБЩИЕ КОМПОНЕНТЫ КОНТЕНТНЫХ СЕКЦИЙ (внутри канвы 1440)
+   ========================================================= */
+/* размер = как в hero .headline: font 500 70px/70px, letter-spacing -1.4px */
+.h2{font:500 70px/70px var(--font-display);letter-spacing:-1.4px;color:var(--color-black)}
+.h2--lg{font-size:70px;line-height:70px;letter-spacing:-1.4px}
+.h2--light{color:var(--color-white)}
+/* .lead — описание, которое идёт СРАЗУ под h2. Фиксированный компонент:
+   18px/1.3 (как .desc в hero), opacity .7 (как в hero), отступ сверху
+   от заголовка всегда 20px — одно и то же в любой секции. */
+.lead{font:400 18px/1.3 var(--font-text);color:rgba(0,0,0,.7);margin-top:20px}
+.lead--dark{color:rgba(255,255,255,.7)}
+/* .note — второстепенные подписи/сноски НЕ под заголовком
+   (process__note, packs__note) — остаются мельче, без отступа-компонента */
+.note{font:400 16px/1.55 var(--font-text);color:var(--muted-light)}
+.note--dark{color:rgba(255,255,255,.4)}
+
+.card-dark{background:var(--color-dark);border-radius:var(--radius-card);padding:80px 50px;overflow:hidden}
+.card-lime{background:var(--color-accent);border-radius:var(--radius-card);padding:56px 50px}
+.card{background:var(--color-card);border:1px solid var(--border-light);
+      border-radius:var(--radius-block);transition:border-color var(--ease-fast)}
+.card:hover{border-color:var(--border-light-hv)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 30px;
+     border-radius:var(--radius-pill);text-decoration:none;white-space:nowrap;
+     font:500 16px/1 var(--font-display);transition:background var(--ease-fast),color var(--ease-fast),opacity var(--ease-fast);border:0;cursor:pointer}
+.btn--black{background:var(--color-black);color:var(--color-white)}
+.btn--black:hover{opacity:.8}
+.btn--lime{background:var(--color-accent);color:var(--color-dark)}
+.btn--lime:hover{opacity:.85}
+.btn--dark{background:var(--color-dark);color:var(--color-white)}
+.btn--dark:hover{opacity:.85}
+
+/* ---- 02 ПРОБЛЕМЫ ----
+   Единственная секция вне scale-канвы: sticky заголовок этого требует.
+   Внутри .stage overflow:hidden полностью отключает position:sticky
+   у потомков, плюс transform на .frame ломает систему координат —
+   комбинация несовместима со sticky в принципе, не обходится настройкой.
+
+   Техника: CSS Grid, где обе колонки по умолчанию stretch на высоту
+   самой высокой (карточек). Sticky-заголовок держится, пока не
+   закончится эта высота — «едет» вместе с карточками и отпускает
+   ровно на последней. */
+/* padding 4.861vw = 70/1440*100 — тот же отступ, что у canvas-секций
+   на scale(viewport/1440). БЕЗ max-width+margin:auto: у остальных секций
+   нет отдельного центрирующего контейнера, только сама канва — если
+   добавить его здесь, левый край съедет относительно них (это и была
+   причина лишнего отступа) */
+.problems2{background:var(--color-surface);padding:100px 4.861vw}
+.problems2__inner{display:grid;
+                   grid-template-columns:minmax(280px,42%) 1fr;gap:40px}
+/* .problems2__head — просто ячейка грида, растягивается по умолчанию
+   (align-items:stretch) на высоту .problems2__cards. Именно поэтому
+   sticky нельзя вешать на неё саму — тогда высота "прилипающего" блока
+   равна высоте карточек, и он никогда не отлипает. Sticky — на
+   ВНУТРЕННЕМ .problems2__head-inner, который короче своего родителя:
+   он держится у верха экрана, пока не кончится родитель (== пока не
+   кончится колонка карточек), и отпускает ровно на последней. */
+.problems2__head-inner{position:sticky;top:120px}
+.problems2__cards{display:flex;flex-direction:column;gap:24px;min-width:50%}
+/* карточка теперь по высоте контента: равный паддинг сверху/снизу,
+   без искусственного растягивания под пол-экрана */
+.problem-card{padding:36px 40px}
+.problem__num{display:block;font:700 40px/1 var(--font-display);letter-spacing:-.01em;
+              color:rgba(0,0,0,.18);margin-bottom:20px}
+.problem__text{font:400 25px/1.4 var(--font-text);color:rgba(0,0,0,.8)}
+
+/* < 900px: колонок и высоты в пол-экрана уже недостаточно места —
+   sticky выключаем, карточки — обычная высота по контенту */
+@media (max-width: 900px) {
+  .problems2__inner{display:flex;flex-direction:column;gap:32px}
+  .problems2__head-inner{position:static}
+}
+
+/* ---- 03 ИНСТРУМЕНТЫ (coverflow) ---- */
+.tools__title{max-width:520px;margin-bottom:48px}
+.slider{position:relative;height:340px}
+.tool-card{position:absolute;left:50%;top:50%;width:280px;height:280px;padding:28px;
+           border-radius:var(--radius-card);background:#1c1c1c;
+           border:1.5px solid rgba(255,255,255,.08);cursor:pointer;user-select:none;
+           display:flex;flex-direction:column;justify-content:space-between;
+           transition:transform .5s cubic-bezier(.4,0,.2,1),opacity .5s ease,background .3s,border-color .3s}
+.tool-card.is-active{background:var(--color-dark);border-color:rgba(201,242,77,.25)}
+.tool-card__icon{font-size:36px;line-height:1}
+.tool-card__name{font:500 18px/1.2 var(--font-display);color:var(--color-white);margin-bottom:8px}
+.tool-card__desc{font:400 14px/1.4 var(--font-text);color:var(--muted-dark)}
+.tool-card__bar{width:32px;height:4px;border-radius:2px;background:var(--color-accent);
+                margin-top:16px;opacity:0;transition:opacity .3s}
+.tool-card.is-active .tool-card__bar{opacity:1}
+
+.slider__ctrl{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:24px}
+.slider__arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--border-dark);
+               background:none;color:var(--color-white);font-size:18px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;transition:border-color var(--ease-fast)}
+.slider__arrow:hover{border-color:rgba(255,255,255,.5)}
+.slider__dots{display:flex;gap:8px}
+.slider__dots button{width:8px;height:8px;border-radius:4px;border:0;padding:0;cursor:pointer;
+                     background:rgba(255,255,255,.2);transition:width .3s,background .3s}
+.slider__dots button.is-active{width:24px;background:var(--color-accent)}
+
+/* ---- 04 КЕЙСЫ ---- */
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.case{overflow:hidden}
+.case__media{position:relative;height:220px;background:rgba(0,0,0,.1)}
+.case__media img{width:100%;height:100%;object-fit:cover}
+.case__tags{position:absolute;left:12px;top:12px;display:flex;gap:8px}
+.tag{font:500 11px/1 var(--font-display);padding:7px 12px;border-radius:var(--radius-pill)}
+.tag--glass{background:rgba(0,0,0,.6);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.tag--lime{background:var(--color-accent);color:var(--color-black)}
+.case__body{padding:20px}
+.case__desc{font:400 14px/1.4 var(--font-text);color:rgba(0,0,0,.7);margin-bottom:16px}
+.case__metrics{display:flex;gap:24px}
+.metric__label{font:400 11px/1.3 var(--font-text);color:rgba(0,0,0,.4);margin-bottom:2px}
+.metric__value{font:700 22px/1 var(--font-display)}
+.metric__value--bad{color:var(--color-bad)}
+.metric__value--good{color:var(--color-good)}
+
+/* ---- 05 ОТЛИЧИЕ ---- */
+.diff__title{max-width:540px}
+.diff__lead{font:400 18px/1.3 var(--font-text);color:rgba(0,0,0,.7);max-width:480px;margin-top:20px;margin-bottom:32px}
+.diff__row{display:flex;align-items:center;gap:16px}
+.diff__note{font:400 13px/1.3 var(--font-text);color:rgba(0,0,0,.5)}
+
+/* ---- 06 ОТЗЫВЫ ---- */
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.review{padding:28px}
+.review__quote{font:500 19px/1.5 var(--font-display);color:var(--color-black);margin-bottom:24px}
+.review__foot{display:flex;align-items:center;justify-content:space-between}
+.review__name{font:500 14px/1.3 var(--font-text);color:var(--color-black)}
+.review__co{font:400 13px/1.3 var(--font-text);color:var(--muted-light)}
+.review__link{font:400 13px/1.3 var(--font-text);color:rgba(0,0,0,.4);
+              text-decoration:underline;text-underline-offset:2px;transition:color var(--ease-fast)}
+.review__link:hover{color:var(--color-black)}
+
+/* ---- 07 ПРОЦЕСС ---- */
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:40px}
+.step{border:1px solid var(--border-dark);border-radius:var(--radius-tile);padding:20px;
+      transition:border-color var(--ease-fast)}
+.step:hover{border-color:var(--border-dark-hv)}
+.step__num{display:block;font:700 13px/1 var(--font-display);color:var(--color-accent);margin-bottom:12px}
+.step__title{font:500 17px/1.2 var(--font-display);color:var(--color-white);margin-bottom:4px}
+.step__time{font:400 13px/1.3 var(--font-text);color:rgba(255,255,255,.4)}
+.process__title{margin-bottom:56px}
+.process__note{max-width:560px;font-size:14px;line-height:1.5}
+
+/* ---- 08 О НАС ---- */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
+.about__text{font:400 18px/1.3 var(--font-text);color:rgba(0,0,0,.7);max-width:500px;margin-top:20px}
+.about__stats{padding:28px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.stat__num{font:700 40px/1 var(--font-display);letter-spacing:-.02em;color:var(--color-black)}
+.stat__label{font:400 13px/1.2 var(--font-text);color:var(--muted-light);margin-top:4px}
+
+/* ---- 09 ПАКЕТЫ ---- */
+.pack{padding:24px;display:flex;flex-direction:column}
+.pack--hl{background:var(--color-dark);border-color:transparent}
+.pack--hl:hover{border-color:transparent}
+.pack__name{font:500 14px/1.3 var(--font-display);color:var(--muted-light);margin-bottom:4px}
+.pack--hl .pack__name{color:var(--muted-dark)}
+.pack__price{font:700 36px/1 var(--font-display);letter-spacing:-.02em;color:var(--color-dark);margin-bottom:24px}
+.pack--hl .pack__price{color:var(--color-accent)}
+.pack__list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px;flex:1}
+.pack__list li{display:flex;gap:8px;font:400 14px/1.3 var(--font-text);color:rgba(0,0,0,.7)}
+.pack--hl .pack__list li{color:rgba(255,255,255,.8)}
+.pack__list li::before{content:'✓';color:var(--color-accent);flex-shrink:0}
+.packs__note{margin-top:24px;font-size:13px;color:rgba(0,0,0,.4)}
+
+/* ---- 10 БРИФ ---- */
+.brief{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.brief__box{border:1px solid var(--border-dark);border-radius:var(--radius-block);padding:28px}
+.brief__bars{display:flex;gap:6px;margin-bottom:24px}
+.brief__bars span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.1);transition:background .3s}
+.brief__bars span.is-on{background:var(--color-accent)}
+.brief__counter{font:500 12px/1.3 var(--font-display);color:var(--muted-dark);margin-bottom:8px}
+.brief__q{font:500 20px/1.2 var(--font-display);color:var(--color-white);margin-bottom:24px}
+.brief__opts{display:flex;flex-direction:column;gap:12px}
+.brief__opts button{text-align:left;padding:14px 20px;border-radius:10px;
+                    border:1px solid var(--border-dark);background:none;color:var(--color-white);
+                    font:400 15px/1.3 var(--font-text);cursor:pointer;transition:border-color .2s,background .2s}
+.brief__opts button:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.05)}
+.brief__done{text-align:center;padding:24px 0}
+.brief__done-check{font-size:48px;line-height:1;color:var(--color-accent);margin-bottom:16px}
+.brief__done-title{font:500 20px/1.2 var(--font-display);color:var(--color-white);margin-bottom:8px}
+.brief__done-text{font:400 14px/1.4 var(--font-text);color:var(--muted-dark)}
+
+/* ---- 11 ФУТЕР ---- */
+.frame--footer{padding:0 var(--content-pad-x) 40px}
+.footer{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.footer__brand{font:500 18px/1 var(--font-display);color:var(--color-black)}
+.footer__links{display:flex;gap:24px}
+.footer__links a{font:400 14px/1.3 var(--font-text);color:var(--muted-light);
+                 text-decoration:none;transition:color var(--ease-fast)}
+.footer__links a:hover{color:var(--color-black)}
+.footer__copy{font:400 13px/1.3 var(--font-text);color:rgba(0,0,0,.3)}
+
+/* =========================================================
+   КОМПАКТ 720–1199: hero-канва уменьшается (как было).
+   Контентные секции остаются на той же канве 1440 — меняется
+   только коэффициент масштаба.
+   ========================================================= */
+@media (max-width: 1200px) {
+  .contact, .nav { display: none; }
+  .compact-head, .mobile-menu { display: flex; }
+
+  .frame--hero { height: 700px; }
+  .hero  { height: 660px; }
+
+  .badge      { top: 140px; }
+  .headline   { top: 172px; }
+  .desc       { top: 400px; }
+  .btn-primary, .btn-ghost { top: 490px; }
+  .cap--primary, .cap--ghost { top: 551px; }
+  .stats      { top: 606px; }
+}
+
+/* =========================================================
+   МОБИЛЬНАЯ ВЁРСТКА <720px.
+   Hero — отдельная разметка (.mobile), как было.
+   Контентные секции — та же разметка, но канва отключается:
+   width:100%, transform снимается, раскладка в одну колонку.
+   ========================================================= */
+.mobile { display: none; }
+
+@media (max-width: 720px) {
+  .stage--hero { display: none; }
+  /* только тут <header> снова рисует себя: единая тёмная стеклянная
+     плашка (просьба — на мобилке такой вид ок, на десктопе/планшете
+     этого быть не должно, там — три отдельные плавающие «таблетки») */
+  .site-header{
+    display:flex;position:fixed;top:63px;left:20px;right:20px;z-index:1001;
+    height:74px;padding:0 10px 0 10px;border-radius:100px;
+    align-items:center;justify-content:space-between;gap:18px;
+    background:var(--glass-dark-bg);border:1px solid var(--glass-dark-border);
+    backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);
+    transition: top .35s ease;
+  }
+  body.header-scrolled .site-header { top: 30px; }
+  /* внутри плашки actions — обычный flex-ребёнок, а не отдельный fixed;
+     nav-wrap скрываем целиком — пустой div без CSS-правил лез в
+     flex-ряд шапки третьим элементом и ломал раскладку на мобильном */
+  .site-header__actions{position:static;right:auto;top:auto;display:flex;align-items:center}
+  .site-header__nav-wrap{display:none}
+  .stage--flow { overflow: visible; }
+  .frame--flow { width: 100%; transform: none !important; padding: 56px 20px; }
+  .frame--inset { padding: 0 10px 56px; }
+  .frame--footer { padding: 0 20px 32px; }
+
+  .h2 { font-size: 30px; }
+  .h2--lg { font-size: 34px; }
+  .lead { font-size: 15px; }
+
+  .card-dark { padding: 36px 20px; }
+  .card-lime { padding: 32px 20px; }
+  .btn { height: 48px; font-size: 15px; }
+
+  .problems2 { padding: 56px 20px; }
+  .problem-card { padding: 24px; }
+  .problem__num { font-size: 28px; margin-bottom: 12px; }
+  .problem__text { font-size: 16px; }
+
+  .tools__title { margin-bottom: 32px; }
+  .slider { height: 300px; }
+  .tool-card { width: 216px; height: 240px; padding: 22px; }
+  .tool-card__icon { font-size: 30px; }
+  .tool-card__name { font-size: 17px; }
+
+  .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 16px; }
+  .grid-5 { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .diff__lead { font-size: 16px; margin-bottom: 24px; }
+  .diff__row { flex-direction: column; align-items: flex-start; gap: 12px; }
+
+  .review { padding: 22px; }
+  .review__quote { font-size: 17px; margin-bottom: 20px; }
+
+  .process__title { margin-bottom: 32px; }
+
+  .about { grid-template-columns: 1fr; gap: 28px; }
+  .about__text { font-size: 16px; }
+  .about__stats { padding: 22px; gap: 20px; }
+  .stat__num { font-size: 30px; }
+
+  .pack__price { font-size: 30px; margin-bottom: 20px; }
+
+  .brief { grid-template-columns: 1fr; gap: 28px; }
+  .brief__title { font-size: 28px; }
+  .brief__box { padding: 22px; }
+  .brief__q { font-size: 18px; }
+
+  .footer { flex-direction: column; text-align: center; gap: 14px; }
+
+  .mobile {
+    display: flex; flex-direction: column;
+    position: relative; margin: 10px; border-radius: 20px; overflow: hidden;
+    min-height: calc(100vh - 20px);
+    background: linear-gradient(135deg, #000000, #242424);
+  }
+  .mobile__img { display: none; }
+
+  .mobile__body { position: relative; z-index: 1; display: flex; flex-direction: column;
+                  min-height: calc(100vh - 20px); padding: 24px 20px; color: #fff; }
+
+  /* .mobile__head больше не нужен как обёртка — .mobile__brand и
+     .mobile__head-right теперь прямые дети глобальной .site-header */
+  .brand, .tg-btn, .compact-head { display: none; }
+  .mobile__brand { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .mobile__brand-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; }
+  .mobile__brand-name { font: 500 23px/1 'Manrope', sans-serif; letter-spacing: -.46px;
+                         color: #fff; transition: color .2s; white-space: nowrap; }
+  .mobile__brand:hover .mobile__brand-name { color: #c9f24d; }
+
+  .mobile__head-right { display: flex; align-items: center; gap: 12px; }
+  .mobile__contact { display: inline-flex; align-items: center; height: 53px; padding: 0 24px;
+                      border-radius: 100px; background: #c9f24d;
+                      color: #000; text-decoration: none; white-space: nowrap;
+                      font: 500 18px/1 'Manrope', sans-serif; transition: opacity .2s; }
+  .mobile__contact:hover { opacity: .82; }
+
+  .mobile__tg-btn { display: flex; align-items: center; justify-content: center;
+                     width: 53px; height: 53px; border-radius: 50%; background: #c9f24d;
+                     position: relative; overflow: hidden; }
+  .mobile__tg-btn .tg-btn__icon { width: 22px; height: 22px; }
+  .mobile__tg-btn:hover { opacity: 1; }
+  .mobile__tg-btn:hover .tg-btn__icon--a { transform: translate(190%, -190%) rotate(25deg); opacity: 0; }
+  .mobile__tg-btn:hover .tg-btn__icon--b { transform: translate(-50%,-50%) rotate(0deg); opacity: 1; }
+
+  .mobile-menu a { font-size: clamp(28px, 9vw, 40px); }
+
+  .mobile__main { margin-top: auto; padding-top: 32px; margin-bottom: 8vh; }
+  .mobile__badge { font: 400 13px/1.3 'Inter', sans-serif; margin-bottom: 14px; }
+  .mobile__badge b { font-weight: 900; }
+
+  .mobile__headline { font: 500 clamp(35px, 10vw, 48px)/1.08 'Manrope', sans-serif;
+                       letter-spacing: -.02em; margin-bottom: 14px; }
+  .mobile__headline span { color: #c9f24d; }
+
+  .mobile__desc { font: 400 16.5px/1.4 'Inter', sans-serif; max-width: 420px; margin-bottom: 60px; opacity: .7; }
+
+  .mobile__ctas { display: flex; flex-direction: column; gap: 10px; margin-bottom: 55px; }
+  .mobile__btn-primary { display: block; text-align: center; padding: 14px 20px;
+                          border-radius: 30px; background: #fff; color: #000;
+                          text-decoration: none; font: 400 16px/1.3 'Inter', sans-serif; }
+  .mobile__btn-ghost { display: block; text-align: center; padding: 16px 20px;
+                        border-radius: 30px; background: rgba(255,255,255,.2);
+                        backdrop-filter: blur(10px);
+                        color: #fff; text-decoration: none;
+                        font: 500 16px/1 'Manrope', sans-serif; }
+  .mobile__cap { font: 400 12px/1.3 'Inter', sans-serif; color: rgba(255,255,255,.65);
+                 align-self: center; text-align: center; white-space: nowrap; margin-bottom: 13px; }
+  .mobile__cap b { font-weight: 500; color: rgba(255,255,255,.9); }
+
+  .mobile__stats { display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+                    gap: 10px 14px; font: 400 14px/1.3 'Inter', sans-serif; margin-top: 5vh; }
+  .mobile__stats i { width: 1px; height: 16px; background: rgba(255,255,255,.6); display: block; }
+}
+
+@media (max-width: 450px) {
+  .mobile__contact { display: none; }
+  .mobile__head-right { gap: 20px; }
+  .grid-5 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== ГЛОБАЛЬНАЯ ШАПКА (fixed, отступ 20px от края экрана) ===== -->
+<header class="site-header">
+  <div class="brand">
+    <img class="brand__avatar" src="img max.jpg" alt="Max Labiak">
+    <span class="brand__name">Max Labiak</span>
+  </div>
+
+  <div class="mobile__brand">
+    <img class="mobile__brand-avatar" src="img max.jpg" alt="Max Labiak">
+    <span class="mobile__brand-name">Max Labiak</span>
+  </div>
+
+  <div class="site-header__nav-wrap">
+    <nav class="nav">
+      <a href="#cases">Кейсы</a>
+      <a href="#pricing">Стоимость</a>
+      <a href="#brief">Бриф</a>
+      <a href="#about">Обо мне</a>
+    </nav>
+  </div>
+
+  <div class="site-header__actions">
+    <a class="tg-btn" href="#" aria-label="Telegram">
+      <img class="tg-btn__icon tg-btn__icon--a" src="Icon Tg.svg" alt="">
+      <img class="tg-btn__icon tg-btn__icon--b" src="Icon Tg.svg" alt="">
+    </a>
+    <a class="contact" href="#brief">Связаться</a>
+
+    <div class="compact-head">
+      <a class="contact-pill" href="#brief">Связаться</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
+        <span class="burger__lines"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+
+    <div class="mobile__head-right">
+      <a class="mobile__tg-btn" href="#" aria-label="Telegram">
+        <img class="tg-btn__icon tg-btn__icon--a" src="Icon Tg.svg" alt="">
+        <img class="tg-btn__icon tg-btn__icon--b" src="Icon Tg.svg" alt="">
+      </a>
+      <a class="mobile__contact" href="#brief">Связаться</a>
+      <button class="burger burger--sm" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
+        <span class="burger__lines"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="mobile-menu" id="mobile-menu">
+  <a href="#cases">Кейсы</a>
+  <a href="#pricing">Стоимость</a>
+  <a href="#brief">Бриф</a>
+  <a href="#about">Обо мне</a>
+</nav>
+
+<!-- ===== 01 HERO — десктоп/планшет: масштабируемый макет ===== -->
+<div class="stage stage--hero">
+  <div class="frame frame--hero">
+
+    <div class="hero">
+      <img class="hero__img" src="hero.png" alt="Скриншот примера сайта на планшете">
+    </div>
+
+    <p class="badge">Делаю сайты под&nbsp;рекламу <b>с&nbsp;2018&nbsp;года</b></p>
+
+    <h1 class="headline">Сайт <span>под рекламу </span>для&nbsp;ремонтных компаний</h1>
+
+    <p class="desc">Превращает трафик из&nbsp;Директа и&nbsp;Авито в&nbsp;заявки на&nbsp;замер. Расчёт стоимости, реальные объекты, заявка сразу в&nbsp;Telegram.</p>
+
+    <a class="btn-primary" href="#brief">Проверить свой сайт</a>
+    <p class="cap cap--primary">Экспресс-аудит скорости и&nbsp;ошибок <b>за&nbsp;2&nbsp;мин</b></p>
+
+    <a class="btn-ghost" href="#brief">Рассчитать сайт с&nbsp;нуля</a>
+    <p class="cap cap--ghost"><b>5&nbsp;вопросов</b>, расчёт сметы сразу на&nbsp;экране</p>
+
+    <div class="stats">
+      <span>5&nbsp;дней</span>
+      <i></i>
+      <span>от&nbsp;25&nbsp;000&nbsp;₽</span>
+      <i></i>
+      <span>Не сработаемся&nbsp;— сделаю возврат</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 01 HERO — мобильная вёрстка ===== -->
+<div class="mobile">
+  <img class="mobile__img" src="hero.png" alt="Скриншот примера сайта на планшете">
+
+  <div class="mobile__body">
+    <div class="mobile__main">
+      <p class="mobile__badge">Делаю сайты под&nbsp;рекламу <b>с&nbsp;2018&nbsp;года</b></p>
+
+      <h1 class="mobile__headline">Сайт <span>под рекламу </span>для&nbsp;ремонтных компаний</h1>
+
+      <p class="mobile__desc">Превращает трафик из&nbsp;Директа и&nbsp;Авито в&nbsp;заявки на&nbsp;замер. Расчёт стоимости, реальные объекты, заявка сразу в&nbsp;Telegram.</p>
+
+      <div class="mobile__ctas">
+        <a class="mobile__btn-primary" href="#brief">Проверить свой сайт</a>
+        <p class="mobile__cap">Экспресс-аудит скорости и&nbsp;ошибок <b>за&nbsp;2&nbsp;мин</b></p>
+        <a class="mobile__btn-ghost" href="#brief">Рассчитать сайт с&nbsp;нуля</a>
+        <p class="mobile__cap"><b>5&nbsp;вопросов</b>, расчёт сметы сразу на&nbsp;экране</p>
+      </div>
+
+      <div class="mobile__stats">
+        <span>5&nbsp;дней</span>
+        <i></i>
+        <span>от&nbsp;25&nbsp;000&nbsp;₽</span>
+        <i></i>
+        <span>Не сработаемся&nbsp;— сделаю возврат</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 02 ПРОБЛЕМЫ ===== -->
+<section class="problems2">
+  <div class="problems2__inner">
+    <div class="problems2__head">
+      <div class="problems2__head-inner">
+        <h2 class="h2 h2--lg">Почему сайт<br>не&nbsp;даёт заявок</h2>
+        <p class="lead">Шесть причин, которые встречаются почти на&nbsp;каждом сайте ремонтной компании. Каждая из&nbsp;них режет конверсию.</p>
+      </div>
+    </div>
+    <div class="problems2__cards">
+      <div class="card problem-card"><span class="problem__num">01</span><p class="problem__text">Нет расчёта стоимости&nbsp;— человек уходит искать цену к&nbsp;конкуренту</p></div>
+      <div class="card problem-card"><span class="problem__num">02</span><p class="problem__text">Форма просит телефон раньше, чем он&nbsp;что-то узнал</p></div>
+      <div class="card problem-card"><span class="problem__num">03</span><p class="problem__text">Фото со&nbsp;стоков вместо реальных объектов</p></div>
+      <div class="card problem-card"><span class="problem__num">04</span><p class="problem__text">Ни&nbsp;слова про смету, договор и&nbsp;гарантии&nbsp;— а&nbsp;боятся именно этого</p></div>
+      <div class="card problem-card"><span class="problem__num">05</span><p class="problem__text">Некому ответить на&nbsp;вопрос здесь и&nbsp;сейчас</p></div>
+      <div class="card problem-card"><span class="problem__num">06</span><p class="problem__text">Грузится 6&nbsp;секунд, на&nbsp;телефоне разъезжается</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 03 ИНСТРУМЕНТЫ ===== -->
+<section class="stage stage--flow">
+  <div class="frame frame--flow frame--inset">
+    <div class="card-dark">
+      <h2 class="h2 h2--light tools__title">Внедряю инструменты, которые приносят заявки</h2>
+
+      <div class="slider" id="toolsTrack">
+        <div class="tool-card"><span class="tool-card__icon">📐</span><div><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Считает сам и&nbsp;не&nbsp;уходит за&nbsp;ценой</p></div><div class="tool-card__bar"></div></div>
+        <div class="tool-card"><span class="tool-card__icon">✅</span><div><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Отсекает нецелевых до&nbsp;звонка</p></div><div class="tool-card__bar"></div></div>
+        <div class="tool-card"><span class="tool-card__icon">🤖</span><div><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div><div class="tool-card__bar"></div></div>
+        <div class="tool-card"><span class="tool-card__icon">🔀</span><div><p class="tool-card__name">Шторка до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div><div class="tool-card__bar"></div></div>
+        <div class="tool-card"><span class="tool-card__icon">🔒</span><div><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Смета, договор, сроки, штрафы</p></div><div class="tool-card__bar"></div></div>
+        <div class="tool-card"><span class="tool-card__icon">✈️</span><div><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div><div class="tool-card__bar"></div></div>
+        <div class="tool-card"><span class="tool-card__icon">📊</span><div><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Видно, откуда пришла заявка</p></div><div class="tool-card__bar"></div></div>
+      </div>
+
+      <div class="slider__ctrl">
+        <button class="slider__arrow" id="toolsPrev" type="button" aria-label="Назад">←</button>
+        <div class="slider__dots" id="toolsDots"></div>
+        <button class="slider__arrow" id="toolsNext" type="button" aria-label="Вперёд">→</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 04 КЕЙСЫ ===== -->
+<section class="stage stage--flow" id="cases">
+  <div class="frame frame--flow">
+    <h2 class="h2" style="margin-bottom:40px">Кейсы</h2>
+    <div class="grid-3">
+
+      <article class="card case">
+        <div class="case__media">
+          <img src="https://images.unsplash.com/photo-1689043528099-2ba014dd7c64?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Массовый сегмент" loading="lazy">
+          <div class="case__tags"><span class="tag tag--glass">Переделали</span><span class="tag tag--lime">Массовый сегмент</span></div>
+        </div>
+        <div class="case__body">
+          <p class="case__desc">Убрали стоковые фото, добавили калькулятор и&nbsp;квиз. Конверсия выросла с&nbsp;0.8% до&nbsp;3.1%.</p>
+          <div class="case__metrics">
+            <div><p class="metric__label">PageSpeed до</p><p class="metric__value metric__value--bad">32</p></div>
+            <div><p class="metric__label">PageSpeed после</p><p class="metric__value metric__value--good">87</p></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card case">
+        <div class="case__media">
+          <img src="https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Премиум" loading="lazy">
+          <div class="case__tags"><span class="tag tag--glass">Переделали</span><span class="tag tag--lime">Премиум</span></div>
+        </div>
+        <div class="case__body">
+          <p class="case__desc">Сделали акцент на&nbsp;реальных объектах и&nbsp;видео. Средний чек вырос на&nbsp;40%.</p>
+          <div class="case__metrics">
+            <div><p class="metric__label">PageSpeed до</p><p class="metric__value metric__value--bad">44</p></div>
+            <div><p class="metric__label">PageSpeed после</p><p class="metric__value metric__value--good">91</p></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card case">
+        <div class="case__media">
+          <img src="https://images.unsplash.com/photo-1630567085480-826f47d6fb5f?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Дома" loading="lazy">
+          <div class="case__tags"><span class="tag tag--glass">Сделали с нуля</span><span class="tag tag--lime">Дома</span></div>
+        </div>
+        <div class="case__body">
+          <p class="case__desc">Новый сайт с&nbsp;нуля за&nbsp;5&nbsp;дней. 12&nbsp;заявок в&nbsp;первую неделю после запуска рекламы.</p>
+          <div class="case__metrics">
+            <div><p class="metric__label">PageSpeed после</p><p class="metric__value metric__value--good">89</p></div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== 05 ОТЛИЧИЕ ===== -->
+<section class="stage stage--flow">
+  <div class="frame frame--flow frame--inset">
+    <div class="card-lime">
+      <h2 class="h2 diff__title">Ваши конкуренты выглядят одинаково</h2>
+      <p class="diff__lead">Синий градиент, стоковые строители, «качественно и&nbsp;в&nbsp;срок». Это можно использовать.</p>
+      <div class="diff__row">
+        <a class="btn btn--black" href="#brief">Проверить</a>
+        <p class="diff__note">2&nbsp;минуты, без звонков и&nbsp;переписки</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 06 ОТЗЫВЫ ===== -->
+<section class="stage stage--flow">
+  <div class="frame frame--flow">
+    <h2 class="h2" style="margin-bottom:40px">Отзывы</h2>
+    <div class="grid-2">
+      <div class="card review">
+        <p class="review__quote">«За&nbsp;первую неделю получили 8&nbsp;заявок из&nbsp;Директа. Раньше с&nbsp;того же&nbsp;бюджета&nbsp;— 1–2 в&nbsp;месяц. Максим сделал всё быстро и&nbsp;объяснил, что изменилось.»</p>
+        <div class="review__foot">
+          <div><p class="review__name">Игорь Стрельников</p><p class="review__co">РемСтройМастер</p></div>
+          <a class="review__link" href="#">Сайт →</a>
+        </div>
+      </div>
+      <div class="card review">
+        <p class="review__quote">«Работали без переписки через менеджера. Прислал фото утром&nbsp;— к&nbsp;вечеру уже был первый экран. Правки принял сразу, без споров. Рекомендую.»</p>
+        <div class="review__foot">
+          <div><p class="review__name">Анна Власова</p><p class="review__co">Уютный Ремонт</p></div>
+          <a class="review__link" href="#">Сайт →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 07 ПРОЦЕСС ===== -->
+<section class="stage stage--flow">
+  <div class="frame frame--flow frame--inset">
+    <div class="card-dark">
+      <h2 class="h2 h2--light process__title">Как проходит работа</h2>
+      <div class="grid-5">
+        <div class="step"><span class="step__num">1</span><p class="step__title">Бриф</p><p class="step__time">20 мин</p></div>
+        <div class="step"><span class="step__num">2</span><p class="step__title">Первый экран</p><p class="step__time">2-й день</p></div>
+        <div class="step"><span class="step__num">3</span><p class="step__title">Сборка</p><p class="step__time">3 дня</p></div>
+        <div class="step"><span class="step__num">4</span><p class="step__title">Правки</p><p class="step__time">2 круга</p></div>
+        <div class="step"><span class="step__num">5</span><p class="step__title">Запуск</p><p class="step__time">1 день</p></div>
+      </div>
+      <p class="note note--dark process__note">От&nbsp;вас&nbsp;— фото объектов, прайс, реквизиты. Срок идёт с&nbsp;момента, когда всё получено.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 08 ОБО МНЕ ===== -->
+<section class="stage stage--flow" id="about">
+  <div class="frame frame--flow">
+    <div class="about">
+      <div>
+        <h2 class="h2 about__title">Кто делает</h2>
+        <p class="about__text">Dars&nbsp;— это я, Максим. Делаю сайты сам. Поэтому вы&nbsp;говорите напрямую с&nbsp;исполнителем, а&nbsp;не&nbsp;через менеджера, и&nbsp;получаете результат за&nbsp;неделю, а&nbsp;не&nbsp;за&nbsp;два месяца.</p>
+      </div>
+      <div class="card about__stats">
+        <div><p class="stat__num">7+</p><p class="stat__label">лет в нише ремонта</p></div>
+        <div><p class="stat__num">80+</p><p class="stat__label">сайтов запущено</p></div>
+        <div><p class="stat__num">1</p><p class="stat__label">человек, без менеджеров</p></div>
+        <div><p class="stat__num">5</p><p class="stat__label">дней средний срок</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 09 ПАКЕТЫ ===== -->
+<section class="stage stage--flow" id="pricing">
+  <div class="frame frame--flow">
+    <h2 class="h2" style="margin-bottom:40px">Пакеты</h2>
+    <div class="grid-3">
+      <div class="card pack">
+        <p class="pack__name">Лендинг</p>
+        <p class="pack__price">25 000 ₽</p>
+        <ul class="pack__list"><li>Первый экран</li><li>Квиз</li><li>Кейсы</li><li>Блок гарантий</li><li>Заявка в&nbsp;Telegram</li></ul>
+        <a class="btn btn--dark" href="#brief">Выбрать</a>
+      </div>
+      <div class="card pack pack--hl">
+        <p class="pack__name">Лендинг +</p>
+        <p class="pack__price">40 000 ₽</p>
+        <ul class="pack__list"><li>Всё из&nbsp;Лендинга</li><li>Калькулятор по&nbsp;м²</li><li>Шторка до/после</li><li>AI-консультант</li><li>Аналитика и&nbsp;цели</li></ul>
+        <a class="btn btn--lime" href="#brief">Выбрать</a>
+      </div>
+      <div class="card pack">
+        <p class="pack__name">Каталог</p>
+        <p class="pack__price">60 000 ₽</p>
+        <ul class="pack__list"><li>Всё из&nbsp;Лендинга +</li><li>Каталог услуг</li><li>Фильтрация по&nbsp;типу</li><li>Страница кейса</li><li>Блог / FAQ</li></ul>
+        <a class="btn btn--dark" href="#brief">Выбрать</a>
+      </div>
+    </div>
+    <p class="note packs__note">Поддержка&nbsp;— 3 000 ₽/мес. Предоплата 50%. Первый экран показываю на&nbsp;2-й день. Не&nbsp;подойдёт направление&nbsp;— возвращаю предоплату полностью.</p>
+  </div>
+</section>
+
+<!-- ===== 10 БРИФ ===== -->
+<section class="stage stage--flow" id="brief">
+  <div class="frame frame--flow frame--inset">
+    <div class="card-dark">
+      <div class="brief">
+        <div>
+          <h2 class="h2 h2--light brief__title">Заполните бриф&nbsp;— пришлю структуру и&nbsp;смету</h2>
+          <p class="lead lead--dark">20&nbsp;минут, ни&nbsp;к&nbsp;чему не&nbsp;обязывает. Стилистику выбираете картинками.</p>
+        </div>
+        <div class="brief__box" id="briefBox"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 11 ФУТЕР ===== -->
+<section class="stage stage--flow">
+  <div class="frame frame--flow frame--footer">
+    <div class="footer">
+      <p class="footer__brand">Dars studio</p>
+      <div class="footer__links">
+        <a href="https://t.me/">Telegram</a>
+        <a href="https://wa.me/">WhatsApp</a>
+        <a href="mailto:hello@darsstudio.ru">Почта</a>
+      </div>
+      <p class="footer__copy">© <span id="year"></span> Dars studio</p>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ── 1. Масштабирование канвы. Один коэффициент на все секции.
+      Высота .frame не хардкодится — читаем offsetHeight (не зависит
+      от transform), поэтому контентные секции могут расти свободно. ── */
+(function () {
+  var BASE = 1440;
+  var stages = Array.prototype.slice.call(document.querySelectorAll('.stage'));
+
+  function fit() {
+    var vw = document.documentElement.clientWidth;
+    var s = vw / BASE;
+    var isMobile = vw <= 720;
+
+    stages.forEach(function (stage) {
+      var frame = stage.querySelector('.frame');
+      if (!frame) return;
+      if (getComputedStyle(stage).display === 'none') return;
+
+      // ниже 720px контентные секции выходят из канвы в обычный поток
+      if (isMobile && frame.classList.contains('frame--flow')) {
+        frame.style.transform = '';
+        stage.style.height = '';
+        return;
+      }
+      var H = frame.offsetHeight;
+      frame.style.transform = 'scale(' + s + ')';
+      stage.style.height = (H * s) + 'px';
+    });
+  }
+
+  window.darsFit = fit;
+  fit();
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  window.addEventListener('load', fit);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(fit); }
+})();
+
+/* ── 1.5. Переключение стекла шапки: над тёмным hero — светлое стекло
+   (как задумано изначально), а как только под шапкой оказывается
+   светлый фон страницы — переключаем на тёмное (класс на body,
+   правила см. у .brand/.nav/.compact-head .contact-pill/.burger).
+   На мобильном (<720) переключать нечего — там плашка всегда тёмная.
+
+   Заодно здесь же — .header-scrolled: как только скролл вниз
+   начался (>10px), шапка подтягивается с 63px до 30px от края
+   (плавно, transition .35s на top у самих элементов). ── */
+(function () {
+  var hero = document.querySelector('.stage--hero');
+  if (!hero) return;
+
+  function update() {
+    document.body.classList.toggle('header-scrolled', window.scrollY > 10);
+
+    if (getComputedStyle(hero).display === 'none') {
+      document.body.classList.remove('header-on-light');
+      return;
+    }
+    var bottom = hero.getBoundingClientRect().bottom;
+    // ~90px — примерный центр шапки по вертикали (отступ 63px + половина высоты плашек)
+    document.body.classList.toggle('header-on-light', bottom <= 90);
+  }
+
+  update();
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  window.addEventListener('load', update);
+})();
+
+/* ── 2. Бургер-меню ── */
+(function () {
+  document.querySelectorAll('.burger').forEach(function (btn) {
+    var menu = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!menu) return;
+    btn.addEventListener('click', function () {
+      var open = menu.classList.toggle('is-open');
+      btn.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    menu.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        menu.classList.remove('is-open');
+        btn.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  });
+})();
+
+/* ── 3. Слайдер инструментов (coverflow) ── */
+(function () {
+  var track = document.getElementById('toolsTrack');
+  if (!track) return;
+
+  var cards = Array.prototype.slice.call(track.querySelectorAll('.tool-card'));
+  var dotsBox = document.getElementById('toolsDots');
+  var n = cards.length;
+  var active = 0;
+  var timer = null;
+  var DELAY = 3200;
+
+  // шаг между карточками: на мобильном уже, иначе соседи уезжают за экран
+  function step() { return document.documentElement.clientWidth <= 720 ? 170 : 260; }
+
+  cards.forEach(function (card, i) {
+    var dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('aria-label', 'Слайд ' + (i + 1));
+    dot.addEventListener('click', function () { go(i); });
+    dotsBox.appendChild(dot);
+    card.addEventListener('click', function () { go(i); });
+  });
+  var dots = Array.prototype.slice.call(dotsBox.children);
+
+  function render() {
+    var S = step();
+    cards.forEach(function (card, i) {
+      // кратчайшее расстояние по кольцу
+      var d = i - active;
+      if (d > n / 2) d -= n;
+      if (d < -n / 2) d += n;
+      var ad = Math.abs(d);
+
+      var sc = ad === 0 ? 1 : (ad === 1 ? 0.82 : 0.65);
+      var op = ad === 0 ? 1 : (ad === 1 ? 0.7 : 0.4);
+
+      card.style.transform = 'translate(-50%,-50%) translateX(' + (d * S) + 'px) scale(' + sc + ')';
+      card.style.opacity = ad > 2 ? 0 : op;
+      card.style.zIndex = ad === 0 ? 10 : (ad === 1 ? 5 : 1);
+      card.style.pointerEvents = ad > 2 ? 'none' : 'auto';
+      card.classList.toggle('is-active', ad === 0);
+    });
+    dots.forEach(function (dot, i) { dot.classList.toggle('is-active', i === active); });
+  }
+
+  function go(i) { active = ((i % n) + n) % n; render(); restart(); }
+  function next() { go(active + 1); }
+  function prev() { go(active - 1); }
+
+  function restart() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(function () { active = (active + 1) % n; render(); }, DELAY);
+  }
+
+  document.getElementById('toolsNext').addEventListener('click', next);
+  document.getElementById('toolsPrev').addEventListener('click', prev);
+  window.addEventListener('resize', render);
+
+  render();
+  restart();
+})();
+
+/* ── 4. Бриф-квиз ── */
+(function () {
+  var box = document.getElementById('briefBox');
+  if (!box) return;
+
+  var questions = [
+    { id: 'segment',  q: 'Какой сегмент?',            options: ['Эконом', 'Стандарт', 'Премиум'] },
+    { id: 'city',     q: 'Город / регион?',           options: ['Москва', 'СПб', 'Другой'] },
+    { id: 'ads',      q: 'Откуда ведёте рекламу?',    options: ['Директ', 'Авито', 'Оба'] },
+    { id: 'site',     q: 'Есть ли сайт сейчас?',      options: ['Есть', 'Нет', 'Есть, но плохой'] },
+    { id: 'timeline', q: 'Когда нужен запуск?',       options: ['Срочно', '1–2 недели', 'Не горит'] }
+  ];
+
+  var step = 0;
+  var answers = {};
+
+  function esc(str) {
+    return String(str).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function render() {
+    if (step >= questions.length) {
+      box.innerHTML =
+        '<div class="brief__done">' +
+          '<div class="brief__done-check">✓</div>' +
+          '<p class="brief__done-title">Отлично, спасибо!</p>' +
+          '<p class="brief__done-text">Свяжусь в течение часа. В рабочее время — быстрее.</p>' +
+        '</div>';
+      if (window.darsFit) window.darsFit();
+      return;
+    }
+
+    var cur = questions[step];
+    var bars = questions.map(function (_, i) {
+      return '<span class="' + (i <= step ? 'is-on' : '') + '"></span>';
+    }).join('');
+    var opts = cur.options.map(function (o) {
+      return '<button type="button" data-value="' + esc(o) + '">' + esc(o) + '</button>';
+    }).join('');
+
+    box.innerHTML =
+      '<div class="brief__bars">' + bars + '</div>' +
+      '<p class="brief__counter">Вопрос ' + (step + 1) + ' из ' + questions.length + '</p>' +
+      '<p class="brief__q">' + esc(cur.q) + '</p>' +
+      '<div class="brief__opts">' + opts + '</div>';
+
+    box.querySelectorAll('.brief__opts button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        answers[cur.id] = btn.getAttribute('data-value');
+        step++;
+        render();
+      });
+    });
+
+    // высота бокса меняется между вопросами — пересчитываем канву
+    if (window.darsFit) window.darsFit();
+  }
+
+  render();
+})();
+
+/* ── 5. Год в футере ── */
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
