@@ -11,6 +11,9 @@
      блок самодостаточный, все классы в пространстве .sa-*, переменные берёт
      из :root ниже. -->
 <link rel="stylesheet" href="assets/css/site-audit.css">
+<!-- Квиз "Подобрать пакет" — переиспользует .sa-*/.brief__* классы выше,
+     свой файл содержит только экран результата. -->
+<link rel="stylesheet" href="assets/css/tariff-quiz.css">
 <style>
 /* =========================================================
    РЕДАКЦИЯ 4 — весь сайт переведён на flow-вёрстку (реальные
@@ -1247,7 +1250,8 @@ body.header-scrolled .site-header__actions {
   .hero-section{padding:0}
   section:nth-of-type(4).frame--inset,
   section:nth-of-type(8).frame--inset,
-  #brief.frame--inset{padding:0 0 var(--pad-y)}
+  #brief.frame--inset,
+  #quiz-pick.frame--inset{padding:0 0 var(--pad-y)}
   .card-dark{border-radius:0}
 
   /* .pack (тариф) и .faq__cta — вернули отступ и скругление как было,
@@ -1508,8 +1512,10 @@ body.header-scrolled .site-header__actions {
           <p class="cap">Экспресс-аудит скорости и&nbsp;ошибок <b>за&nbsp;2&nbsp;мин</b></p>
         </div>
         <div class="hero-cta">
-          <a class="btn-ghost" href="#brief">Рассчитать сайт с&nbsp;нуля</a>
-          <p class="cap"><b>5&nbsp;вопросов</b>, расчёт сметы сразу на&nbsp;экране</p>
+          <!-- Просто якорь на блок тарифов. Квиз подбора пакета —
+               не попап, а секция "09.6" сразу под тарифами (#tariffQuizBox,
+               assets/js/tariff-quiz.js), эта кнопка её не открывает. -->
+          <a class="btn-ghost" href="#pricing">Разработать с&nbsp;нуля</a>
         </div>
       </div>
     </div>
@@ -1825,7 +1831,7 @@ body.header-scrolled .site-header__actions {
 <section class="frame--flow pricing">
   <h2 class="h2" id="pricing" style="margin-bottom:44px">Пакеты</h2>
   <div class="grid-3">
-    <div class="card pack">
+    <div class="card pack" data-pack="start">
       <div class="pack__head">
       <p class="pack__name">Лендинг Start</p>
       <p class="pack__for">Для&nbsp;небольших команд и&nbsp;первого запуска рекламы</p>
@@ -1853,7 +1859,7 @@ body.header-scrolled .site-header__actions {
       </div>
       <a class="btn btn--dark" href="#brief">Обсудить проект</a>
     </div>
-    <div class="card pack pack--hl">
+    <div class="card pack pack--hl" data-pack="plus">
       <div class="pack__head">
       <span class="tag tag--lime pack__badge">Оптимально для&nbsp;запуска рекламы</span>
       <p class="pack__name">Лендинг Plus</p>
@@ -1883,7 +1889,7 @@ body.header-scrolled .site-header__actions {
       </div>
       <a class="btn btn--lime" href="#brief">Начать проект</a>
     </div>
-    <div class="card pack">
+    <div class="card pack" data-pack="corp">
       <div class="pack__head">
       <p class="pack__name">Корпоративный сайт</p>
       <p class="pack__for">Для&nbsp;компаний с&nbsp;большим портфолио и&nbsp;несколькими услугами</p>
@@ -1917,6 +1923,22 @@ body.header-scrolled .site-header__actions {
       <li><b>Поддержка после запуска</b><span>Сверх пакета&nbsp;— 8 000 ₽/мес</span></li>
     </ul>
     <p class="packs__guarantee"><b>Гарантия:</b> если визуальное направление после первого экрана не&nbsp;подойдёт, верну предоплату полностью.</p>
+  </div>
+</section>
+
+<!-- ===== 09.6 КВИЗ ПОДБОРА ПАКЕТА ===== -->
+<!-- Та же разметка/вёрстка, что у брифа (секция 10 ниже): .brief — грид
+     заголовок/текст слева, .brief__box справа. Рендерится скриптом
+     assets/js/tariff-quiz.js. -->
+<section class="frame--flow frame--inset" id="quiz-pick">
+  <div class="card-dark">
+    <div class="brief">
+      <div>
+        <h2 class="h2 h2--light">Не знаете, какой сайт вам нужен?</h2>
+        <p class="lead lead--dark">4 вопроса&nbsp;— покажу рекомендацию и&nbsp;цену сразу на&nbsp;экране.</p>
+      </div>
+      <div class="brief__box" id="tariffQuizBox"></div>
+    </div>
   </div>
 </section>
 
@@ -2786,5 +2808,8 @@ document.getElementById('year').textContent = new Date().getFullYear();
 <!-- Экспресс-аудит. defer — скрипт не блокирует отрисовку hero, а разметку
      модального окна создаёт лениво, при первом клике по кнопке. -->
 <script src="assets/js/site-audit.js" defer></script>
+<!-- Квиз "Подобрать пакет" — рендерится в #tariffQuizBox сразу под
+     тарифами, не попап. -->
+<script src="assets/js/tariff-quiz.js" defer></script>
 </body>
 </html>

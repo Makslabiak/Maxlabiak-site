@@ -48,6 +48,86 @@ function buildMessage(lead, audit) {
   ].filter(Boolean).join('\n');
 }
 
+function buildQuizMessage(lead) {
+  const pkg = lead.package || {};
+  const answersText = (lead.answers || [])
+    .map((a, idx) => `${idx + 1}. ${esc(a.question)} — ${esc(a.answer)}`)
+    .join('\n') || '—';
+
+  return [
+    '<b>Новая заявка — квиз «Подобрать пакет»</b>',
+    '',
+    `<b>Имя:</b> ${esc(lead.name)}`,
+    `<b>Контакт:</b> ${esc(lead.contact)}`,
+    '',
+    `<b>Рекомендован пакет:</b> ${esc(pkg.name)} (${esc(pkg.price)})`,
+    '',
+    '<b>Ответы:</b>',
+    answersText,
+    '',
+    lead.comment ? `<b>Комментарий:</b> ${esc(lead.comment)}` : '',
+    `<i>Источник: ${esc(lead.source || 'quiz_calculate')}</i>`
+  ].filter(Boolean).join('\n');
+}
+
+/**
+ * Заявка из квиза подбора пакета — отдельно от sendLead(), потому что
+ * та жёстко завязана на структуру audit-отчёта (buildMessage читает
+ * audit.categories/issues). Канал доставки (Telegram → файл-фолбэк)
+ * тот же, сообщение и данные для сохранения — свои.
+ */
+export async function sendQuizLead(lead) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const text = buildQuizMessage(lead);
+
+  if (token && chatId) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+        signal: AbortSignal.timeout(TELEGRAM_TIMEOUT)
+      });
+      if (res.ok) return { ok: true, channel: 'telegram' };
+      log.error('telegram_send_failed', { status: res.status, source: 'quiz' });
+    } catch (err) {
+      log.error('telegram_network_error', { name: err?.name, source: 'quiz' });
+    }
+    return saveQuizToFile(lead, 'telegram_failed');
+  }
+
+  return saveQuizToFile(lead, 'not_configured');
+}
+
+/** DEV-ONLY fallback, отдельный файл — чтобы не путать со структурой audit-лидов. */
+async function saveQuizToFile(lead, reason) {
+  const file = path.join(TEMP_DIR, 'quiz-leads.json');
+  try {
+    await fs.mkdir(TEMP_DIR, { recursive: true });
+    let list = [];
+    try {
+      list = JSON.parse(await fs.readFile(file, 'utf8'));
+      if (!Array.isArray(list)) list = [];
+    } catch { /* файла ещё нет */ }
+
+    list.push({
+      receivedAt: new Date().toISOString(),
+      reason,
+      source: lead.source || 'quiz_calculate',
+      lead: { name: lead.name, contact: lead.contact, comment: lead.comment || null },
+      package: lead.package || null,
+      answers: lead.answers || []
+    });
+    await fs.writeFile(file, JSON.stringify(list, null, 2), 'utf8');
+    log.warn('quiz_lead_saved_to_file', { reason });
+    return { ok: true, channel: 'file' };
+  } catch (err) {
+    log.error('quiz_lead_save_failed', { message: String(err?.message).slice(0, 120) });
+    return { ok: false };
+  }
+}
+
 export async function sendLead(lead, audit) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;

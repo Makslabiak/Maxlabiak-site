@@ -1,0 +1,143 @@
+/* =========================================================
+   КВИЗ "ПОДОБРАТЬ ПАКЕТ".
+
+   Вопросы рендерятся в .brief__box (секция 09.6 под тарифами) —
+   переиспользуют существующие .brief__* классы из index.html как есть
+   (тёмная тема, не трогаем).
+
+   Результат — попап (.tqm): по центру экрана на десктопе/планшете,
+   на весь экран на 320–720px. Белый фон. Слева (на десктопе) — карточка
+   рекомендованного тарифа, клонированная из блока тарифов (реальная
+   разметка/данные), справа сверху — акцентная плашка-рекомендация,
+   ниже — форма контакта. Крестик закрытия — сиблинг скролл-контейнера
+   (.tqm__scroll), поэтому остаётся на месте, пока контент внутри
+   прокручивается — не часть того, что скроллится. Попап светлый,
+   поэтому форма ниже использует var(--muted-light)/var(--border-light)/
+   var(--color-black), а не var(--muted-dark)/var(--border-dark) —
+   в этом проекте "-dark"/"-light" называны по фону, НА КОТОРОМ текст
+   стоит, а не по цвету самого текста: -dark = для тёмного фона (светлый
+   текст), -light = для светлого фона (тёмный текст).
+   ========================================================= */
+
+/* ── форма контакта (светлая тема, внутри попапа) ── */
+.tq-title { font: 500 44px/1.15 var(--font-display); color: var(--color-black); margin-bottom: 9px; }
+.tq-subtitle { font: 400 15px/1.4 var(--font-text); color: var(--muted-light); margin-bottom: 22px; }
+
+.tq-field { margin-bottom: 14px; }
+.tq-label { display: block; font: 400 13px/1.2 var(--font-text); color: var(--muted-light); margin-bottom: 7px; }
+.tq-input {
+  width: 100%; background: none; border: 1px solid var(--border-light); border-radius: 10px;
+  color: var(--color-black); font: 400 16px/1.3 var(--font-text);
+  padding: 15px 18px; transition: border-color .2s;
+}
+.tq-input::placeholder { color: var(--muted-light); }
+.tq-input:focus { outline: none; border-color: var(--color-accent); }
+.tq-input.is-error { border-color: var(--color-bad); }
+
+.tq-error { display: none; font: 400 13px/1.35 var(--font-text); color: var(--color-bad); margin: -6px 0 14px; }
+.tq-error.is-visible { display: block; }
+
+.tq-check { display: flex; align-items: flex-start; gap: 10px; font: 400 13px/1.45 var(--font-text); color: var(--muted-light); cursor: pointer; margin: 4px 0 18px; }
+.tq-check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--color-accent); flex-shrink: 0; }
+/* ссылка на политику — пока "/", реальная страница добавится позже */
+.tq-check-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.tq-check-link:hover { color: var(--color-black); }
+
+.tq-btn-wide { width: 100%; }
+
+.tq-link {
+  background: none; border: 0; padding: 0; text-align: center;
+  color: var(--muted-light); font: 400 14px/1.4 var(--font-text);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; transition: color .2s;
+}
+.tq-link:hover { color: var(--color-black); }
+
+/* ── попап результата (.tqm) — белый, по центру экрана ── */
+.tqm {
+  position: fixed; inset: 0; z-index: 2100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.tqm[hidden] { display: none; }
+
+.tqm__overlay {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, .4);
+  opacity: 0; transition: opacity .35s ease;
+}
+.tqm.is-open .tqm__overlay { opacity: 1; }
+
+.tqm__panel {
+  position: relative; width: 100%; max-width: 1100px;
+  max-height: 88vh; overflow: hidden;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity .35s ease, transform .4s cubic-bezier(.22, .61, .36, 1);
+}
+.tqm.is-open .tqm__panel { opacity: 1; transform: translateY(0); }
+
+/* крестик — сиблинг скролл-контейнера (не внутри него), поэтому
+   position:absolute считает координаты от .tqm__panel и не участвует
+   в его скролле — остаётся на месте, пока крутится .tqm__scroll */
+.tqm__scroll {
+  max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: clamp(32px, 4.5vw, 64px);
+}
+
+.tqm__close {
+  position: absolute; top: 20px; right: 20px; z-index: 3;
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; background: rgba(0, 0, 0, .05);
+  color: var(--color-black); font-size: 22px; line-height: 1; cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.tqm__close:hover { background: rgba(0, 0, 0, .1); }
+
+.tqm__grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 4vw, 56px); align-items: start;
+}
+@media (max-width: 720px) { .tqm__grid { grid-template-columns: 1fr; } }
+
+/* карточка тарифа внутри попапа — клон реальной .pack, стилизуется
+   существующими .card/.pack классами (они уже белые по умолчанию,
+   ничего переопределять не нужно) */
+.tqm__card { min-width: 0; }
+
+.tqm__right { min-width: 0; }
+.tqm__reco {
+  display: inline-block;
+  font: 400 15px/1.5 var(--font-text); color: var(--color-black);
+  padding: 14px 20px; margin-bottom: 24px;
+  border-radius: var(--radius-block); background: var(--color-accent);
+}
+.tqm__reco b { font-weight: 700; }
+
+/* .brief__done переиспользуется для экрана "спасибо" внутри попапа,
+   но он рассчитан на тёмный фон (#brief) — здесь фон белый,
+   перекрашиваем текст локально, саму разметку не дублируем */
+.tqm .brief__done-title { color: var(--color-black); }
+.tqm .brief__done-text { color: var(--muted-light); }
+
+/* ── 320–720px: попап на весь экран, крестик — тёмное стекло,
+   тот же приём, что у шапки после скролла (--glass-dark-bg/-border,
+   тот же blur) — на белой полноэкранной панели нужен явный,
+   узнаваемый элемент управления, а не почти невидимая точка. ── */
+@media (max-width: 720px) {
+  .tqm { padding: 0; }
+  .tqm__panel {
+    max-width: none; max-height: none; width: 100%; height: 100%;
+    border-radius: 0;
+  }
+  .tqm__scroll { max-height: none; height: 100%; padding: 24px; padding-top: 72px; }
+  .tqm__close {
+    background: var(--glass-dark-bg);
+    border: 1px solid var(--glass-dark-border);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    color: #fff;
+  }
+  .tqm__close:hover { background: var(--glass-dark-bg); }
+}
