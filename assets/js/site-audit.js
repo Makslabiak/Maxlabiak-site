@@ -166,7 +166,7 @@
     if (!el.root) buildModal();
     state.openerButton = opener || null;
 
-    document.body.classList.add('sa-lock');
+    if (window.scrollLock) window.scrollLock.lock(); else document.body.classList.add('sa-lock');
     el.root.hidden = false;
     // Двойной rAF: даём браузеру применить hidden=false до старта
     // transition, иначе окно появится без анимации
@@ -200,7 +200,7 @@
     var finish = function () {
       el.root.hidden = true;
       el.body.innerHTML = ''; // освобождаем узлы и обработчики отчёта
-      document.body.classList.remove('sa-lock');
+      if (window.scrollLock) window.scrollLock.unlock(); else document.body.classList.remove('sa-lock');
       state.screen = 'initial';
       state.showAllIssues = false;
       // Возвращаем фокус туда, откуда пришли — иначе после закрытия

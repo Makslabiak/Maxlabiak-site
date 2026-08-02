@@ -201,7 +201,7 @@
     pop.reco.innerHTML = '<b>Рекомендую ' + esc(PACKAGES[packageId].name) + '</b> — ' + esc(REASONS[packageId]);
     renderPopupForm(packageId);
 
-    document.body.classList.add('sa-lock');
+    if (window.scrollLock) window.scrollLock.lock(); else document.body.classList.add('sa-lock');
     pop.root.hidden = false;
     requestAnimationFrame(function () {
       requestAnimationFrame(function () { pop.root.classList.add('is-open'); });
@@ -215,7 +215,7 @@
     document.removeEventListener('keydown', onPopupKeydown, true);
     setTimeout(function () {
       pop.root.hidden = true;
-      document.body.classList.remove('sa-lock');
+      if (window.scrollLock) window.scrollLock.unlock(); else document.body.classList.remove('sa-lock');
     }, 420); // чуть больше transition (.4s) у .tqm__panel — чтобы не хлопнуло на середине сдвига
   }
 

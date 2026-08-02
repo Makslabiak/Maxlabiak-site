@@ -1829,7 +1829,7 @@ body.header-scrolled .site-header__actions {
 
 <!-- ===== 09 ПАКЕТЫ ===== -->
 <section class="frame--flow pricing">
-  <h2 class="h2" id="pricing" style="margin-bottom:44px">Пакеты</h2>
+  <h2 class="h2" id="pricing" style="margin-bottom:44px">Выберите свой пакет</h2>
   <div class="grid-3">
     <div class="card pack" data-pack="start">
       <div class="pack__head">
@@ -2047,6 +2047,51 @@ body.header-scrolled .site-header__actions {
 </section>
 
 <script>
+/* ── 0. Блокировка скролла фона — общий хелпер для модалки аудита,
+      попапа квиза и бургер-меню.
+      Просто класс с overflow:hidden на body мобильный Safari часто
+      игнорирует — body там не единственный скроллящийся элемент,
+      сам вьюпорт может прокрутиться поверх. Надёжный приём —
+      зафиксировать body через position:fixed с отрицательным top,
+      равным текущей прокрутке, и вернуть scrollTo на то же место
+      при разблокировке. Счётчик — на случай (не должно происходить,
+      но на всякий случай) если что-то попробует лочить дважды подряд:
+      снимаем фиксацию только когда счётчик дошёл до нуля. */
+window.scrollLock = (function () {
+  var savedY = 0;
+  var count = 0;
+  return {
+    lock: function () {
+      if (count === 0) {
+        savedY = window.scrollY || window.pageYOffset || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = '-' + savedY + 'px';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.classList.add('sa-lock');
+      }
+      count++;
+    },
+    unlock: function () {
+      count = Math.max(0, count - 1);
+      if (count === 0) {
+        document.body.classList.remove('sa-lock');
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        /* behavior:'instant' — на сайте глобально html{scroll-behavior:smooth}
+           (для якорных переходов), без явного instant обычный
+           window.scrollTo(0, savedY) поедет плавной анимацией от 0
+           (пока body был зафиксирован, scrollY визуально был 0) —
+           выглядит как "страница скроллится с начала" при каждом
+           закрытии попапа/меню. */
+        window.scrollTo({ top: savedY, left: 0, behavior: 'instant' });
+      }
+    }
+  };
+})();
+
 /* ── 1. Переключение стекла шапки + подтягивание при скролле.
       Канвы больше нет, поэтому hero — обычный, всегда видимый
       элемент; проверка "hero скрыт (мобильный дублируется)"
@@ -2076,12 +2121,14 @@ body.header-scrolled .site-header__actions {
       var open = menu.classList.toggle('is-open');
       btn.classList.toggle('is-open', open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { window.scrollLock.lock(); } else { window.scrollLock.unlock(); }
     });
     menu.querySelectorAll('a').forEach(function (link) {
       link.addEventListener('click', function () {
         menu.classList.remove('is-open');
         btn.classList.remove('is-open');
         btn.setAttribute('aria-expanded', 'false');
+        window.scrollLock.unlock();
       });
     });
   });
