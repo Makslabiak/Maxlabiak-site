@@ -40,7 +40,9 @@
       href="https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin
       href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7W0Q5n-wU.woff2">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap"
+      rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet"></noscript>
 <!-- LCP-картинка хиро — своя на мобильном/планшете (фон карточки) и
      на десктопе (мокап-планшет), preload грузит только актуальную для
      текущей ширины экрана через media, а не обе разом. -->
@@ -48,11 +50,15 @@
 <link rel="preload" as="image" type="image/webp" href="images/01-hero/hero-planshet.webp" media="(min-width: 1201px)">
 <!-- Модальное окно экспресс-аудита. Отдельным файлом, а не в общий <style>:
      блок самодостаточный, все классы в пространстве .sa-*, переменные берёт
-     из :root ниже. -->
-<link rel="stylesheet" href="assets/css/site-audit.css">
+     из :root ниже. Неблокирующая загрузка (preload+swap) — эти стили
+     нужны только для попапов, которые появляются по клику, а не для
+     первого экрана; рендер страницы их ждать не должен. -->
+<link rel="preload" href="assets/css/site-audit.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="assets/css/site-audit.css"></noscript>
 <!-- Квиз "Подобрать пакет" — переиспользует .sa-*/.brief__* классы выше,
      свой файл содержит только экран результата. -->
-<link rel="stylesheet" href="assets/css/tariff-quiz.css">
+<link rel="preload" href="assets/css/tariff-quiz.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="assets/css/tariff-quiz.css"></noscript>
 <style>
 /* =========================================================
    РЕДАКЦИЯ 4 — весь сайт переведён на flow-вёрстку (реальные
@@ -1634,12 +1640,12 @@ body.header-scrolled .site-header__actions {
 <!-- ===== ГЛОБАЛЬНАЯ ШАПКА (fixed) ===== -->
 <header class="site-header">
   <div class="brand">
-    <img class="brand__avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak" width="1173" height="1280">
+    <img class="brand__avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak" width="300" height="328">
     <span class="brand__name">Max Labiak</span>
   </div>
 
   <div class="mobile__brand">
-    <img class="mobile__brand-avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak" width="1173" height="1280">
+    <img class="mobile__brand-avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak" width="300" height="328">
     <span class="mobile__brand-name">Max Labiak</span>
   </div>
 
@@ -1864,20 +1870,20 @@ body.header-scrolled .site-header__actions {
       <div class="diff__viewport">
         <div class="diff__track" id="diffTrack">
         <div class="diff__group">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-01.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-02.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-03.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-04.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-05.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-06.webp" alt="" loading="lazy" decoding="async">
         </div>
         <div class="diff__group" aria-hidden="true">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" loading="lazy" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-01.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-02.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-03.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-04.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-05.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-06.webp" alt="" loading="lazy" decoding="async">
         </div>
         </div>
       </div>
