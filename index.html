@@ -3,7 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dars studio — сайты под рекламный трафик для ремонтных компаний</title>
+<title>Разработка сайта под рекламу для ремонтных компаний</title>
+<meta name="description" content="Разработка сайтов для компаний по ремонту квартир и домов. Проектирование под рекламный трафик, продуманная структура, адаптивный дизайн и быстрый запуск.">
+
+<link rel="icon" type="image/svg+xml" href="images/Favicon.svg">
+<link rel="mask-icon" href="images/Favicon.svg" color="#c9f24d">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Max Labiak">
+<meta property="og:title" content="Сайты под ключ">
+<meta property="og:description" content="Разработка сайтов для компаний по ремонту квартир и домов. Проектирование под рекламный трафик, продуманная структура, адаптивный дизайн и быстрый запуск.">
+<meta property="og:image" content="https://maxlabiak.pro/images/OG.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://maxlabiak.pro/">
+<meta property="og:locale" content="ru_RU">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Сайты под ключ">
+<meta name="twitter:description" content="Разработка сайтов для компаний по ремонту квартир и домов. Проектирование под рекламный трафик, продуманная структура, адаптивный дизайн и быстрый запуск.">
+<meta name="twitter:image" content="https://maxlabiak.pro/images/OG.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -174,7 +194,7 @@ img{display:block;max-width:100%}
    оба элемента скрыты везде, кроме своего диапазона (ниже по файлу) */
 .hero-card__bg{position:absolute;inset:0;width:100%;height:100%;
                 object-fit:cover;display:none}
-.hero-card__overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none}
+.hero-card__overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);display:none}
 .hero-card__content{position:relative;z-index:1;min-height:inherit;
                      display:flex;flex-direction:column;justify-content:center;
                      padding:clamp(64px,8.5vw,118px) clamp(20px,5vw,70px) clamp(36px,5vw,60px);
@@ -1535,13 +1555,10 @@ body.header-scrolled .site-header__actions {
 <section class="hero-section">
   <div class="hero-card">
     <img class="hero-card__img" src="images/01-hero/hero-planshet.webp" alt="Скриншот примера сайта на планшете">
-    <!-- ЗАГОТОВКА для 900–1200: фоновое фото под тёмным оверлеем на всю
-         подложку карточки, вместо мокапа-планшета (тому тесно в этом
-         диапазоне). Сейчас вместо реального фото — прозрачная заглушка,
-         поменять src на фото объекта/интерьера, когда оно будет. Оба
-         элемента скрыты по умолчанию (см. .hero-card__bg/.hero-card__overlay
-         в CSS) и показываются только в @media 900–1200. -->
-    <img class="hero-card__bg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="" aria-hidden="true">
+    <!-- Фоновое фото на всю подложку карточки под тёмным оверлеем —
+         показывается вместо мокапа-планшета на ≤1200px (см. .hero-card__img{display:none}
+         в @media max-width:1200px выше по файлу). -->
+    <img class="hero-card__bg" src="images/01-hero/hero-mob.webp" alt="" aria-hidden="true">
     <div class="hero-card__overlay" aria-hidden="true"></div>
     <div class="hero-card__content">
       <p class="badge">Делаю сайты <b>с&nbsp;2018&nbsp;года</b></p>
