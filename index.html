@@ -6,8 +6,12 @@
 <title>Разработка сайта под рекламу для ремонтных компаний</title>
 <meta name="description" content="Разработка сайтов для компаний по ремонту квартир и домов. Проектирование под рекламный трафик, продуманная структура, адаптивный дизайн и быстрый запуск.">
 
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://maxlabiak.pro/">
+
 <link rel="icon" type="image/svg+xml" href="images/Favicon.svg">
 <link rel="mask-icon" href="images/Favicon.svg" color="#c9f24d">
+<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Max Labiak">
@@ -26,7 +30,22 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Прямой preload двух самых используемых начертаний (кириллица) —
+     Manrope 500 держит все заголовки, Inter 400 — основной текст.
+     URL получены из самого Google Fonts CSS (он их отдаёт динамически
+     по User-Agent, поэтому просто угадать нельзя — только вытащить
+     из реального ответа). Без preload браузер узнаёт о шрифте только
+     после разбора этого CSS-файла — на секунду-другую позже. -->
+<link rel="preload" as="font" type="font/woff2" crossorigin
+      href="https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin
+      href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7W0Q5n-wU.woff2">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- LCP-картинка хиро — своя на мобильном/планшете (фон карточки) и
+     на десктопе (мокап-планшет), preload грузит только актуальную для
+     текущей ширины экрана через media, а не обе разом. -->
+<link rel="preload" as="image" type="image/webp" href="images/01-hero/hero-mob.webp" media="(max-width: 1200px)">
+<link rel="preload" as="image" type="image/webp" href="images/01-hero/hero-planshet.webp" media="(min-width: 1201px)">
 <!-- Модальное окно экспресс-аудита. Отдельным файлом, а не в общий <style>:
      блок самодостаточный, все классы в пространстве .sa-*, переменные берёт
      из :root ниже. -->
@@ -1491,18 +1510,136 @@ body.header-scrolled .site-header__actions {
   .headline { font-size: clamp(36px,6vw,70px); }
 }
 </style>
+
+<!-- Schema.org JSON-LD. Organization намеренно не добавлен рядом с Person —
+     для соло-фрилансера это было бы дублирование одного и того же лица
+     двумя разными типами, а не разными сущностями. LocalBusiness тоже
+     нет — работа идёт не по одному городу/адресу, а по СНГ и Европе.
+     WebSite без SearchAction — на сайте нет встроенного поиска. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://maxlabiak.pro/#person",
+      "name": "Максим Лобяк",
+      "url": "https://maxlabiak.pro/",
+      "image": "https://maxlabiak.pro/images/00-shapka/avatar-max.jpg",
+      "jobTitle": "Веб-разработчик",
+      "email": "mailto:lobyak2401@mail.ru",
+      "sameAs": [
+        "https://t.me/maxlobyak",
+        "https://wa.me/375257950710"
+      ]
+    },
+    {
+      "@type": "ProfessionalService",
+      "@id": "https://maxlabiak.pro/#service",
+      "name": "Max Labiak — сайты для ремонтных компаний",
+      "description": "Разработка сайтов для компаний по ремонту квартир и домов. Проектирование под рекламный трафик, продуманная структура, адаптивный дизайн и быстрый запуск.",
+      "url": "https://maxlabiak.pro/",
+      "image": "https://maxlabiak.pro/images/OG.png",
+      "provider": { "@id": "https://maxlabiak.pro/#person" },
+      "priceRange": "45000–150000 RUB",
+      "makesOffer": [
+        {
+          "@type": "Offer",
+          "name": "Лендинг Start",
+          "price": "45000",
+          "priceCurrency": "RUB"
+        },
+        {
+          "@type": "Offer",
+          "name": "Лендинг Plus",
+          "price": "85000",
+          "priceCurrency": "RUB"
+        },
+        {
+          "@type": "Offer",
+          "name": "Корпоративный сайт",
+          "price": "150000",
+          "priceCurrency": "RUB"
+        }
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://maxlabiak.pro/#website",
+      "name": "Max Labiak",
+      "url": "https://maxlabiak.pro/",
+      "inLanguage": "ru",
+      "publisher": { "@id": "https://maxlabiak.pro/#person" }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://maxlabiak.pro/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Что если у меня нет текстов и фотографий?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Это не проблема. Я помогу со структурой сайта, подготовлю тексты с помощью AI и подскажу, какие фотографии лучше использовать."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Что входит в поддержку после запуска?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "После запуска проекта я буду помогать с заменой контента, исправлять возможные технические недочёты и отвечать на все ваши вопросы."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Что делать, если после запуска понадобится что-то изменить?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "После запуска вы всегда сможете обратиться ко мне. Я помогу обновить тексты, фотографии, цены или внести другие изменения. При необходимости можно подключить ежемесячную поддержку."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Как будут приходить заявки?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "В зависимости от выбранного тарифа заявки могут приходить в Telegram, на электронную почту или автоматически передаваться в CRM."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Что если мне не понравится дизайн?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Работа начинается с разработки первого экрана. Если предложенное направление не подойдёт, я внесу правки или верну предоплату согласно условиям гарантии."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "С чего начинается работа?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "После заявки мы обсуждаем ваш бизнес, определяем задачи и подходящий тариф. Затем я приступаю к разработке первого экрана и согласовываю визуальное направление перед дальнейшей работой."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
 <!-- ===== ГЛОБАЛЬНАЯ ШАПКА (fixed) ===== -->
 <header class="site-header">
   <div class="brand">
-    <img class="brand__avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak">
+    <img class="brand__avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak" width="1173" height="1280">
     <span class="brand__name">Max Labiak</span>
   </div>
 
   <div class="mobile__brand">
-    <img class="mobile__brand-avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak">
+    <img class="mobile__brand-avatar" src="images/00-shapka/avatar-max.jpg" alt="Max Labiak" width="1173" height="1280">
     <span class="mobile__brand-name">Max Labiak</span>
   </div>
 
@@ -1518,8 +1655,8 @@ body.header-scrolled .site-header__actions {
 
   <div class="site-header__actions">
     <a class="tg-btn" href="https://t.me/maxlobyak" target="_blank" rel="noopener" aria-label="Telegram">
-      <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="">
-      <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="">
+      <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100">
+      <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100">
     </a>
     <a class="contact" href="https://t.me/maxlobyak" target="_blank" rel="noopener">Связаться</a>
 
@@ -1532,8 +1669,8 @@ body.header-scrolled .site-header__actions {
 
     <div class="mobile__head-right">
       <a class="mobile__tg-btn" href="https://t.me/maxlobyak" aria-label="Telegram">
-        <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="">
-        <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="">
+        <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100">
+        <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100">
       </a>
       <a class="mobile__contact" href="https://t.me/maxlobyak">Связаться</a>
       <button class="burger burger--sm" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
@@ -1551,14 +1688,15 @@ body.header-scrolled .site-header__actions {
   <a href="#faq">FAQ</a>
 </nav>
 
+<main>
 <!-- ===== 01 HERO — единая flow-разметка на все ширины ===== -->
 <section class="hero-section">
   <div class="hero-card">
-    <img class="hero-card__img" src="images/01-hero/hero-planshet.webp" alt="Скриншот примера сайта на планшете">
+    <img class="hero-card__img" src="images/01-hero/hero-planshet.webp" alt="Скриншот примера сайта на планшете" width="1672" height="941">
     <!-- Фоновое фото на всю подложку карточки под тёмным оверлеем —
          показывается вместо мокапа-планшета на ≤1200px (см. .hero-card__img{display:none}
          в @media max-width:1200px выше по файлу). -->
-    <img class="hero-card__bg" src="images/01-hero/hero-mob.webp" alt="" aria-hidden="true">
+    <img class="hero-card__bg" src="images/01-hero/hero-mob.webp" alt="" aria-hidden="true" width="1536" height="1024">
     <div class="hero-card__overlay" aria-hidden="true"></div>
     <div class="hero-card__content">
       <p class="badge">Делаю сайты <b>с&nbsp;2018&nbsp;года</b></p>
@@ -1622,22 +1760,22 @@ body.header-scrolled .site-header__actions {
     <div class="slider">
       <div class="slider__track">
         <div class="slider__group">
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/calculator.webp" alt="Калькулятор по м²" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Даёт точную цену за&nbsp;30&nbsp;секунд&nbsp;— снижает страх «дорого»</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/before-after.webp" alt="Сравнение результатов до/после" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Сравнение результатов до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/AI.webp" alt="AI-консультант" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/Quiz.webp" alt="Квиз с подбором" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Квалифицирует лид&nbsp;— вы&nbsp;получаете готовое ТЗ с&nbsp;бюджетом и&nbsp;параметрами</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/guarantee.webp" alt="Блок гарантий" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Повышает доверие на&nbsp;40%&nbsp;— закрывает возражения о&nbsp;сорванных сроках и&nbsp;скрытых платежах</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/TG.webp" alt="Заявка в Telegram" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/analytics.webp" alt="Аналитика и цели" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Сберегает рекламный бюджет&nbsp;— показывает, какой источник реально приносит деньги</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/calculator.webp" alt="Калькулятор по м²" width="793" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Даёт точную цену за&nbsp;30&nbsp;секунд&nbsp;— снижает страх «дорого»</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/before-after.webp" alt="Сравнение результатов до/после" width="786" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Сравнение результатов до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/AI.webp" alt="AI-консультант" width="791" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/Quiz.webp" alt="Квиз с подбором" width="813" height="463" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Квалифицирует лид&nbsp;— вы&nbsp;получаете готовое ТЗ с&nbsp;бюджетом и&nbsp;параметрами</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/guarantee.webp" alt="Блок гарантий" width="792" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Повышает доверие на&nbsp;40%&nbsp;— закрывает возражения о&nbsp;сорванных сроках и&nbsp;скрытых платежах</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/TG.webp" alt="Заявка в Telegram" width="791" height="450" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/analytics.webp" alt="Аналитика и цели" width="796" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Сберегает рекламный бюджет&nbsp;— показывает, какой источник реально приносит деньги</p></div></div>
         </div>
         <div class="slider__group" aria-hidden="true">
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/calculator.webp" alt="Калькулятор по м²" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Даёт точную цену за&nbsp;30&nbsp;секунд&nbsp;— снижает страх «дорого»</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/before-after.webp" alt="Сравнение результатов до/после" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Сравнение результатов до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/AI.webp" alt="AI-консультант" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/Quiz.webp" alt="Квиз с подбором" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Квалифицирует лид&nbsp;— вы&nbsp;получаете готовое ТЗ с&nbsp;бюджетом и&nbsp;параметрами</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/guarantee.webp" alt="Блок гарантий" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Повышает доверие на&nbsp;40%&nbsp;— закрывает возражения о&nbsp;сорванных сроках и&nbsp;скрытых платежах</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/TG.webp" alt="Заявка в Telegram" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div></div>
-        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/analytics.webp" alt="Аналитика и цели" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Сберегает рекламный бюджет&nbsp;— показывает, какой источник реально приносит деньги</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/calculator.webp" alt="Калькулятор по м²" width="793" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Калькулятор по&nbsp;м²</p><p class="tool-card__desc">Даёт точную цену за&nbsp;30&nbsp;секунд&nbsp;— снижает страх «дорого»</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/before-after.webp" alt="Сравнение результатов до/после" width="786" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Сравнение результатов до/после</p><p class="tool-card__desc">Доказательство вместо обещаний</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/AI.webp" alt="AI-консультант" width="791" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">AI-консультант</p><p class="tool-card__desc">Отвечает на&nbsp;вопросы ночью и&nbsp;в&nbsp;выходные</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/Quiz.webp" alt="Квиз с подбором" width="813" height="463" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Квиз с&nbsp;подбором</p><p class="tool-card__desc">Квалифицирует лид&nbsp;— вы&nbsp;получаете готовое ТЗ с&nbsp;бюджетом и&nbsp;параметрами</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/guarantee.webp" alt="Блок гарантий" width="792" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Блок гарантий</p><p class="tool-card__desc">Повышает доверие на&nbsp;40%&nbsp;— закрывает возражения о&nbsp;сорванных сроках и&nbsp;скрытых платежах</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/TG.webp" alt="Заявка в Telegram" width="791" height="450" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Заявка в&nbsp;Telegram</p><p class="tool-card__desc">Отвечаете за&nbsp;минуту, а&nbsp;не&nbsp;за&nbsp;день</p></div></div>
+        <div class="tool-card"><div class="tool-card__media"><img src="images/03-instruments/analytics.webp" alt="Аналитика и цели" width="796" height="452" loading="lazy" decoding="async"></div><div class="tool-card__body"><p class="tool-card__name">Аналитика и&nbsp;цели</p><p class="tool-card__desc">Сберегает рекламный бюджет&nbsp;— показывает, какой источник реально приносит деньги</p></div></div>
         </div>
       </div>
 
@@ -1662,7 +1800,7 @@ body.header-scrolled .site-header__actions {
 
     <article class="card case">
       <div class="case__media">
-        <img src="https://images.unsplash.com/photo-1689043528099-2ba014dd7c64?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Массовый сегмент" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1689043528099-2ba014dd7c64?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Массовый сегмент" width="600" height="400" loading="lazy">
         <div class="case__tags"><span class="tag tag--glass">Пересобрали</span><span class="tag tag--lime">Массовый сегмент</span></div>
       </div>
       <div class="case__body">
@@ -1678,7 +1816,7 @@ body.header-scrolled .site-header__actions {
 
     <article class="card case">
       <div class="case__media">
-        <img src="https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Премиум" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Премиум" width="600" height="400" loading="lazy">
         <div class="case__tags"><span class="tag tag--glass">Пересобрали</span><span class="tag tag--lime">Премиум</span></div>
       </div>
       <div class="case__body">
@@ -1694,7 +1832,7 @@ body.header-scrolled .site-header__actions {
 
     <article class="card case">
       <div class="case__media">
-        <img src="https://images.unsplash.com/photo-1630567085480-826f47d6fb5f?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Дома" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1630567085480-826f47d6fb5f?w=600&amp;h=400&amp;fit=crop&amp;auto=format" alt="Дома" width="600" height="400" loading="lazy">
         <div class="case__tags"><span class="tag tag--glass">Разработка с&nbsp;нуля</span><span class="tag tag--lime">Дома</span></div>
       </div>
       <div class="case__body">
@@ -1726,20 +1864,20 @@ body.header-scrolled .site-header__actions {
       <div class="diff__viewport">
         <div class="diff__track" id="diffTrack">
         <div class="diff__group">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" loading="lazy" decoding="async">
         </div>
         <div class="diff__group" aria-hidden="true">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" decoding="async">
-          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-01.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-02.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-03.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-04.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-05.webp" alt="" loading="lazy" decoding="async">
+          <img class="diff__shot" width="3360" height="1940" src="images/05-konkurenty/konkurent-06.webp" alt="" loading="lazy" decoding="async">
         </div>
         </div>
       </div>
@@ -2068,12 +2206,12 @@ body.header-scrolled .site-header__actions {
     <p class="faq__cta-text">Не&nbsp;нашли ответ на&nbsp;свой вопрос?<br>Напишите мне напрямую, отвечу за&nbsp;15&nbsp;минут.</p>
     <div class="faq__cta-icons">
       <a class="faq__cta-icon" href="https://t.me/maxlobyak" target="_blank" rel="noopener" aria-label="Telegram">
-        <img class="faq__icon-img faq__icon-img--a" src="images/00-shapka/icon-telegram.svg" alt="">
-        <img class="faq__icon-img faq__icon-img--b" src="images/00-shapka/icon-telegram.svg" alt="">
+        <img class="faq__icon-img faq__icon-img--a" src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100" loading="lazy">
+        <img class="faq__icon-img faq__icon-img--b" src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100" loading="lazy">
       </a>
       <a class="faq__cta-icon" href="https://wa.me/375257950710" target="_blank" rel="noopener" aria-label="WhatsApp">
-        <img class="faq__icon-img faq__icon-img--a" src="images/10-faq/WhatsApp.svg" alt="">
-        <img class="faq__icon-img faq__icon-img--b" src="images/10-faq/WhatsApp.svg" alt="">
+        <img class="faq__icon-img faq__icon-img--a" src="images/10-faq/WhatsApp.svg" alt="" width="129" height="125" loading="lazy">
+        <img class="faq__icon-img faq__icon-img--b" src="images/10-faq/WhatsApp.svg" alt="" width="129" height="125" loading="lazy">
       </a>
       <a class="faq__cta-icon" href="mailto:lobyak2401@mail.ru" target="_blank" rel="noopener" aria-label="Email">
         <span class="faq__mail faq__mail--a">@</span>
@@ -2099,8 +2237,8 @@ body.header-scrolled .site-header__actions {
           <div class="cf-field">
             <label class="cf-label">Способ связи</label>
             <div class="cf-channels" id="cfChannels">
-              <button type="button" class="cf-channel is-active" data-channel="telegram" aria-label="Telegram"><img src="images/00-shapka/icon-telegram.svg" alt=""></button>
-              <button type="button" class="cf-channel" data-channel="whatsapp" aria-label="WhatsApp"><img src="images/10-faq/WhatsApp.svg" alt=""></button>
+              <button type="button" class="cf-channel is-active" data-channel="telegram" aria-label="Telegram"><img src="images/00-shapka/icon-telegram.svg" alt="" width="121" height="100" loading="lazy"></button>
+              <button type="button" class="cf-channel" data-channel="whatsapp" aria-label="WhatsApp"><img src="images/10-faq/WhatsApp.svg" alt="" width="129" height="125" loading="lazy"></button>
               <button type="button" class="cf-channel" data-channel="email" aria-label="Email"><span class="cf-channel-at">@</span></button>
             </div>
             <input class="cf-input" id="cfContact" name="contact" maxlength="120" placeholder="@username">
@@ -2121,6 +2259,8 @@ body.header-scrolled .site-header__actions {
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- ===== 11 ФУТЕР ===== -->
 <section class="frame--footer">
