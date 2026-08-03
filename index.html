@@ -1016,17 +1016,16 @@ body.header-scrolled .site-header__actions {
    "-dark" здесь значит "для тёмного фона", а не цвет самого текста
    (см. коммент в tariff-quiz.css, тот же принцип во всём проекте).
 
-   Здесь grid с дефолтным align-items:stretch — то, что раньше было
-   багом для настоящей картинки (растягивало высоту, ломая aspect-ratio),
-   теперь ровно то, что нужно: плейсхолдер без своего соотношения
-   сторон просто тянется на всю высоту формы. */
-.contact-form{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,4vw,56px)}
-.contact-form__photo{width:100%;height:100%;min-height:320px;
-                     border-radius:var(--radius-block);background:rgba(255,255,255,.08)}
+   Без фото — просто центрированная колонка с формой, а не грид на
+   две части. Заголовок/подпись по центру, сами поля формы — уже
+   внутри .cf-field принудительно left (иначе лейблы над левым краем
+   инпута смотрятся криво по центру, та же причина, что и раньше
+   была на мобильном грид-варианте). */
+.contact-form{max-width:850px;margin:0 auto;text-align:center}
 .contact-form__body .h2{margin-bottom:10px}
-.contact-form__body .lead{margin-bottom:clamp(24px,2.8vw,32px)}
+.contact-form__body .lead{margin-bottom:clamp(28px,3.2vw,36px)}
 
-.cf-field{margin-bottom:14px}
+.cf-field{margin-bottom:14px;text-align:left}
 .cf-label{display:block;font:400 13px/1.2 var(--font-text);color:var(--muted-dark);margin-bottom:7px}
 .cf-input{width:100%;background:none;border:1px solid var(--border-dark);border-radius:10px;
           color:var(--color-white);font:400 16px/1.3 var(--font-text);
@@ -1061,18 +1060,13 @@ body.header-scrolled .site-header__actions {
 .cf-error.is-visible{display:block}
 
 .cf-check{display:flex;align-items:flex-start;gap:10px;font:400 13px/1.45 var(--font-text);
-          color:var(--muted-dark);cursor:pointer;margin:4px 0 18px}
+          color:var(--muted-dark);cursor:pointer;margin:4px 0 18px;text-align:left}
 .cf-check input{width:18px;height:18px;margin-top:1px;accent-color:var(--color-accent);flex-shrink:0}
 .cf-check-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .cf-check-link:hover{color:var(--color-white)}
 
 .cf-btn-wide{width:100%}
 
-@media (max-width:720px){
-  .contact-form{grid-template-columns:1fr;text-align:center}
-  .contact-form__photo{min-height:200px}
-  .cf-check{text-align:left}
-}
 
 /* ---- 10.1 БРИФ: 721–900px, точечное исключение ----
    .brief — грид 1fr 1fr (заголовок слева, квиз справа), на 721–900px
@@ -1213,6 +1207,26 @@ body.header-scrolled .site-header__actions {
   .pack__list-col li{font-size:clamp(12px,1.06vw,14px)}
   .pack .btn{height:43px;font-size:15px}
   .packs__foot{margin-top:clamp(34px,3.83vw,51px)}
+}
+
+/* =========================================================
+   ≤390px — чек-лист пакетов (.pack__list) в две колонки не влезает:
+   минимальная ширина отдельных пунктов (не переносящихся посреди
+   слова, напр. «Индивидуальный дизайн», «AI-консультант») на этом
+   шрифте — около 140px на колонку, то есть 2 колонки + gap + паддинги
+   карточки дают жёсткий минимум ~345px. Порог поставлен не впритык
+   к этой цифре (355px), а с запасом до 390px — иначе от 355 до 385px
+   карточка залипает ровно на 345px и не следует за шириной экрана
+   (виден на глаз при live-resize как "перестаёт сжиматься", хотя
+   формально ничего не обрезано) — так это плато убрано целиком,
+   а не только сам факт горизонтального оверфлоу. Единственный
+   надёжный фикс — схлопнуть чек-лист в одну колонку именно тут,
+   а не пытаться ужать текст (сжатие словами до нечитаемого нет
+   смысла). Выше 390px колонкам хватает места и они сами плавно
+   растут вместе с шириной экрана — проверено эмпирически. */
+@media (max-width: 390px) {
+  .pack__list{flex-direction:column;row-gap:6px}
+  .pack__list-col{flex:none}
 }
 
 /* =========================================================
@@ -2056,7 +2070,6 @@ body.header-scrolled .site-header__actions {
 <section class="frame--flow frame--inset" id="brief">
   <div class="card-dark">
     <div class="contact-form">
-      <div class="contact-form__photo"></div>
       <div class="contact-form__body">
         <h2 class="h2 h2--light">Обсудим ваш проект?</h2>
         <p class="lead lead--dark">Оставьте контакт&nbsp;— отвечу в&nbsp;течение часа.</p>
