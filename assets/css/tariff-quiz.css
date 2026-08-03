@@ -34,6 +34,23 @@
 .tq-input:focus { outline: none; border-color: var(--color-accent); }
 .tq-input.is-error { border-color: var(--color-bad); }
 
+/* переключатель канала связи (Telegram/WhatsApp/Email) — иконки над
+   полем контакта, меняют плейсхолдер/валидацию/allowed-символы в JS */
+.tq-channels { display: flex; gap: 8px; margin-bottom: 10px; }
+.tq-channel {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-light);
+  background: none; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color .2s, background .2s;
+}
+.tq-channel img { width: 18px; height: 18px; display: block; filter: brightness(0); }
+.tq-channel-at { font: 500 18px/1 var(--font-display); color: var(--color-black); }
+.tq-channel:hover { border-color: var(--color-black); }
+.tq-channel.is-active { border-color: var(--color-accent); background: var(--color-accent); }
+
+/* ошибка конкретного поля — под самим полем, а не общая на всю форму */
+.tq-field-error { display: none; font: 400 13px/1.35 var(--font-text); color: var(--color-bad); margin: 6px 0 0; }
+.tq-field-error.is-visible { display: block; }
+
 .tq-error { display: none; font: 400 13px/1.35 var(--font-text); color: var(--color-bad); margin: -6px 0 14px; }
 .tq-error.is-visible { display: block; }
 
@@ -52,6 +69,27 @@
 }
 .tq-link:hover { color: var(--color-black); }
 
+/* ── "или сразу напишите" — сознательно второстепенное, мелкое:
+   форма/кнопка "Отправить" остаётся главным действием (структурированный
+   лид с источником в CRM/Telegram), это — запасной путь для тех, кто
+   вместо формы предпочитает написать сразу. Если сделать эти ссылки
+   такими же по весу, как кнопка "Отправить", это два конкурирующих
+   CTA в момент максимальной готовности человека — хуже для конверсии,
+   чем один понятный путь по умолчанию. ── */
+.tq-or {
+  text-align: center; font: 400 12px/1 var(--font-text); color: var(--muted-light);
+  text-transform: uppercase; letter-spacing: .04em;
+  margin: 18px 0 12px;
+}
+.tq-direct { display: flex; gap: 10px; }
+.tq-direct-link {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  height: 44px; border-radius: 10px; border: 1px solid var(--border-light);
+  font: 500 14px/1 var(--font-display); color: var(--color-black);
+  text-decoration: none; transition: border-color .2s, background .2s;
+}
+.tq-direct-link:hover { border-color: var(--color-black); background: rgba(0, 0, 0, .03); }
+
 /* ── попап результата (.tqm) — белый, по центру экрана ── */
 .tqm {
   position: fixed; inset: 0; z-index: 2100;
@@ -69,7 +107,7 @@
 .tqm.is-open .tqm__overlay { opacity: 1; }
 
 .tqm__panel {
-  position: relative; width: 100%; max-width: 1100px;
+  position: relative; width: 100%; max-width: 1280px;
   max-height: 88vh; overflow: hidden;
   background: var(--color-white);
   border-radius: var(--radius-card);
@@ -98,7 +136,7 @@
 .tqm__close:hover { background: rgba(0, 0, 0, .1); }
 
 .tqm__grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 4vw, 56px); align-items: start;
+  display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(32px, 4vw, 56px); align-items: start;
 }
 @media (max-width: 720px) { .tqm__grid { grid-template-columns: 1fr; } }
 
@@ -115,6 +153,11 @@
   border-radius: var(--radius-block); background: var(--color-accent);
 }
 .tqm__reco b { font-weight: 700; }
+/* если попап открыт напрямую с кнопки в карточке (не после квиза),
+   рекомендация не нужна — человек уже сам выбрал пакет.
+   [hidden] нужно явно, иначе наш display:inline-block выше победит
+   стандартное поведение атрибута. */
+.tqm__reco[hidden] { display: none; }
 
 /* .brief__done переиспользуется для экрана "спасибо" внутри попапа,
    но он рассчитан на тёмный фон (#brief) — здесь фон белый,

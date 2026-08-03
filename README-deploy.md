@@ -143,11 +143,11 @@ CLI залогинен локально на маке (netlify login), OAuth-к�
 ```
 Папка для деплоя статики (чистая, без node_modules/бэкенда):
 ```
-/Users/maksim/site-dars-deploy   (index.html без dev-скрипта annotator, assets/, images/, netlify.toml)
+/Users/maksim/site dars/deploy-netlify   (index.html без dev-скрипта annotator, assets/, images/, netlify.toml)
 ```
 Деплой:
 ```bash
-cd /Users/maksim/site-dars-deploy
+cd "/Users/maksim/site dars/deploy-netlify"
 netlify deploy --prod --dir . --no-build
 ```
 **Важно:** флаг `--no-build` обязателен — без него Netlify Build падает с

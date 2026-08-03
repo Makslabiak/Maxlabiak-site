@@ -9,6 +9,15 @@
    блока тарифов, без CTA-кнопки — она теперь в форме), справа —
    короткая причина и форма контакта. Закрывается крестиком/оверлеем/Esc,
    квиз в фоне сразу обнуляется — готов к повторному проходу.
+
+   Тот же попап открывается и напрямую с кнопок в карточках тарифов
+   ([data-pack-open="start|plus|corp"]) — тогда без вопросов квиза,
+   сразу карточка + форма. Источник лида (source) в обоих случаях
+   разный, чтобы на бэкенде различать, откуда пришла заявка.
+   В форме — не только кнопка "Отправить", но и прямые ссылки на
+   Telegram/WhatsApp с предзаполненным текстом (какой пакет интересует) —
+   часть аудитории предпочитает сразу написать, а не заполнять форму;
+   без предзаполненного текста при этом терялся бы контекст заявки.
    ========================================================= */
 (function () {
   'use strict';
@@ -75,10 +84,94 @@
   var state = { step: 0, answers: [] };
   var pop = {}; // ссылки на узлы попапа, заполняются в buildPopup()
 
+  var CONTACTS = { tg: 'maxlobyak', waNumber: '375257950710' };
+
+  /* переключатель канала связи над полем контакта — у каждого канала
+     свой набор разрешённых символов, свой плейсхолдер и своя проверка,
+     вместо одной общей регулярки, пытавшейся угадать канал по виду
+     введённого текста (путалась на WhatsApp-юзернеймах с точками) */
+  var CHANNELS = {
+    telegram: {
+      icon: 'images/00-shapka/icon-telegram.svg', label: 'Telegram',
+      placeholder: '@username', allowed: /[^a-zA-Z0-9_@]/g,
+      validate: function (v) { return /^@[a-zA-Z0-9_]{5,32}$/.test(v.trim()); },
+      error: 'Введите @username в Telegram (5–32 символа)'
+    },
+    whatsapp: {
+      icon: 'images/10-faq/WhatsApp.svg', label: 'WhatsApp',
+      placeholder: '+7 900 123-45-67', allowed: /[^0-9+\-\s()]/g,
+      validate: function (v) { return /^\+?\d{6,15}$/.test(v.replace(/[\s\-()]/g, '')); },
+      error: 'Введите номер телефона WhatsApp'
+    },
+    email: {
+      icon: null, label: 'Email',
+      placeholder: 'you@example.com', allowed: /[^a-zA-Z0-9@._\-+]/g,
+      validate: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); },
+      error: 'Введите корректный email'
+    }
+  };
+  var CHANNEL_ORDER = ['telegram', 'whatsapp', 'email'];
+
+  function channelButtonsHtml() {
+    return CHANNEL_ORDER.map(function (id, i) {
+      var ch = CHANNELS[id];
+      var inner = ch.icon ? '<img src="' + ch.icon + '" alt="">' : '<span class="tq-channel-at">@</span>';
+      return '<button type="button" class="tq-channel' + (i === 0 ? ' is-active' : '') +
+             '" data-channel="' + id + '" aria-label="' + ch.label + '">' + inner + '</button>';
+    }).join('');
+  }
+
+  /* привязывает переключатель к полю: клик по иконке меняет плейсхолдер/
+     allowed-символы/валидацию для этого поля; возвращает объект с
+     текущим каналом и проверкой — используется при отправке формы */
+  function setupChannelPicker(root) {
+    var buttons = root.querySelectorAll('.tq-channel');
+    var input = root.querySelector('[name="contact"]');
+    var current = CHANNEL_ORDER[0];
+
+    function apply(id) {
+      current = id;
+      input.placeholder = CHANNELS[id].placeholder;
+      input.value = ''; // старое значение почти наверняка не подходит под новый формат
+      buttons.forEach(function (btn) { btn.classList.toggle('is-active', btn.getAttribute('data-channel') === id); });
+      clearFieldError(root, 'contact');
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        apply(btn.getAttribute('data-channel'));
+        input.focus();
+      });
+    });
+
+    input.addEventListener('input', function () {
+      var cleaned = input.value.replace(CHANNELS[current].allowed, '');
+      if (cleaned !== input.value) input.value = cleaned;
+    });
+
+    return {
+      getChannel: function () { return current; },
+      isValid: function () { return CHANNELS[current].validate(input.value); },
+      getError: function () { return CHANNELS[current].error; }
+    };
+  }
+
   function esc(str) {
     return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
+
+  /* прямые ссылки на TG/WhatsApp с предзаполненным текстом — чтобы даже
+     тот, кто пропускает форму и пишет напрямую, не терял контекст
+     (какой пакет его интересовал), и не пришлось переспрашивать */
+  function buildDirectLinks(packageId) {
+    var pkg = PACKAGES[packageId];
+    var text = encodeURIComponent('Здравствуйте! Интересует пакет «' + pkg.name + '», ' + pkg.price + '.');
+    return {
+      tg: 'https://t.me/' + CONTACTS.tg + '?text=' + text,
+      wa: 'https://wa.me/' + CONTACTS.waNumber + '?text=' + text
+    };
   }
 
   /* ─────────────── подсчёт рекомендованного пакета ─────────────── */
@@ -139,6 +232,15 @@
 
   box.addEventListener('click', onBoxClick);
 
+  /* ─────────────── запуск попапа прямо с кнопок в карточках тарифов ─────────────── */
+
+  document.addEventListener('click', function (e) {
+    var opener = e.target.closest('[data-pack-open]');
+    if (!opener) return;
+    e.preventDefault();
+    openPopup(opener.getAttribute('data-pack-open'), [], 'pricing_card_' + opener.getAttribute('data-pack-open'));
+  });
+
   /* ─────────────── попап результата ─────────────── */
 
   function buildPopup() {
@@ -177,17 +279,18 @@
     if (e.key === 'Escape') closePopup();
   }
 
-  function openPopup(packageId, answers) {
+  function openPopup(packageId, answers, source) {
     if (!pop.root) buildPopup();
     pop.answers = answers || [];
+    pop.source = source || 'quiz_calculate';
 
     /* карточка — реальный клон из блока тарифов, не переписанный текст:
        характеристики/состав пакета не могут разъехаться с оригиналом.
        Кнопку внизу клона убираем — она заменена формой справа. */
-    var source = document.querySelector('.pack[data-pack="' + packageId + '"]');
+    var sourceCard = document.querySelector('.pack[data-pack="' + packageId + '"]');
     pop.card.innerHTML = '';
-    if (source) {
-      var clone = source.cloneNode(true);
+    if (sourceCard) {
+      var clone = sourceCard.cloneNode(true);
       /* тёмный вариант карточки — уже готовый .pack--hl (сейчас на
          странице им пользуется только Plus), просто раздаём его всем
          клонам в попапе, вместо того чтобы красить карточку заново */
@@ -198,7 +301,10 @@
       pop.card.appendChild(clone);
     }
 
-    pop.reco.innerHTML = '<b>Рекомендую ' + esc(PACKAGES[packageId].name) + '</b> — ' + esc(REASONS[packageId]);
+    pop.reco.hidden = pop.source !== 'quiz_calculate';
+    if (!pop.reco.hidden) {
+      pop.reco.innerHTML = '<b>Рекомендую ' + esc(PACKAGES[packageId].name) + '</b> — ' + esc(REASONS[packageId]);
+    }
     renderPopupForm(packageId);
 
     if (window.scrollLock) window.scrollLock.lock(); else document.body.classList.add('sa-lock');
@@ -220,6 +326,7 @@
   }
 
   function renderPopupForm(packageId) {
+    var direct = buildDirectLinks(packageId);
     pop.formSlot.innerHTML =
       '<h3 class="tq-title">Оставьте заявку</h3>' +
       '<p class="tq-subtitle">Свяжусь и уточню детали.</p>' +
@@ -227,10 +334,13 @@
         '<div class="tq-field">' +
           '<label class="tq-label" for="tqmName">Как вас зовут</label>' +
           '<input class="tq-input" id="tqmName" name="name" maxlength="80" autocomplete="name" placeholder="Максим">' +
+          '<p class="tq-field-error" data-error-for="name"></p>' +
         '</div>' +
         '<div class="tq-field">' +
-          '<label class="tq-label" for="tqmContact">Telegram или WhatsApp</label>' +
-          '<input class="tq-input" id="tqmContact" name="contact" maxlength="120" placeholder="@username или WhatsApp">' +
+          '<label class="tq-label">Способ связи</label>' +
+          '<div class="tq-channels">' + channelButtonsHtml() + '</div>' +
+          '<input class="tq-input" id="tqmContact" name="contact" maxlength="120" placeholder="' + CHANNELS[CHANNEL_ORDER[0]].placeholder + '">' +
+          '<p class="tq-field-error" data-error-for="contact"></p>' +
         '</div>' +
         '<p class="tq-error" data-tq-error></p>' +
         '<label class="tq-check">' +
@@ -238,7 +348,43 @@
           '<span>Согласен на обработку <a href="/" class="tq-check-link">персональным данным</a></span>' +
         '</label>' +
         '<button type="submit" class="btn btn--lime tq-btn-wide">Отправить</button>' +
-      '</form>';
+      '</form>' +
+      '<p class="tq-or">или сразу напишите</p>' +
+      '<div class="tq-direct">' +
+        '<a class="tq-direct-link" href="' + direct.tg + '" target="_blank" rel="noopener">Telegram</a>' +
+        '<a class="tq-direct-link" href="' + direct.wa + '" target="_blank" rel="noopener">WhatsApp</a>' +
+      '</div>';
+
+    pop.channelPicker = setupChannelPicker(pop.formSlot);
+
+    /* ошибку убираем сразу по клику/фокусу на поле, не дожидаясь ввода —
+       не ждём повторной отправки формы, чтобы это заметить */
+    pop.formSlot.querySelectorAll('.tq-input').forEach(function (input) {
+      input.addEventListener('focus', function () { clearFieldError(pop.formSlot, input.name); });
+      input.addEventListener('input', function () { clearFieldError(pop.formSlot, input.name); });
+    });
+    // отдельно: чекбокс согласия не .tq-input, ошибка на нём — общий tq-error
+    var consentInput = pop.formSlot.querySelector('[name="consent"]');
+    consentInput.addEventListener('change', function () {
+      if (consentInput.checked) {
+        var generalError = pop.formSlot.querySelector('[data-tq-error]');
+        generalError.classList.remove('is-visible');
+      }
+    });
+  }
+
+  function setFieldError(root, fieldName, message) {
+    var input = root.querySelector('[name="' + fieldName + '"]');
+    var errorEl = root.querySelector('[data-error-for="' + fieldName + '"]');
+    if (input) input.classList.add('is-error');
+    if (errorEl) { errorEl.textContent = message; errorEl.classList.add('is-visible'); }
+  }
+
+  function clearFieldError(root, fieldName) {
+    var input = root.querySelector('[name="' + fieldName + '"]');
+    var errorEl = root.querySelector('[data-error-for="' + fieldName + '"]');
+    if (input) input.classList.remove('is-error');
+    if (errorEl) { errorEl.textContent = ''; errorEl.classList.remove('is-visible'); }
   }
 
   function onPopupSubmit(e) {
@@ -247,13 +393,22 @@
     e.preventDefault();
 
     var errorEl = form.querySelector('[data-tq-error]');
+    errorEl.classList.remove('is-visible');
+    clearFieldError(form, 'name');
+    clearFieldError(form, 'contact');
+
     var name = form.name.value.trim();
     var contact = form.contact.value.trim();
     var consent = form.consent.checked;
+    var hasError = false;
 
-    if (name.length < 2) return showFormError(errorEl, 'Укажите имя');
-    if (contact.length < 3) return showFormError(errorEl, 'Укажите способ связи');
+    if (name.length < 2) { setFieldError(form, 'name', 'Укажите имя'); hasError = true; }
+    if (!pop.channelPicker.isValid()) {
+      setFieldError(form, 'contact', pop.channelPicker.getError());
+      hasError = true;
+    }
     if (!consent) return showFormError(errorEl, 'Нужно согласие на обработку данных');
+    if (hasError) return;
 
     var submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
@@ -261,9 +416,10 @@
 
     var pkg = PACKAGES[form.getAttribute('data-package-id')];
     var payload = {
-      source: 'quiz_calculate',
+      source: pop.source,
       name: name,
       contact: contact,
+      channel: pop.channelPicker.getChannel(),
       consent: true,
       package: pkg,
       answers: pop.answers.map(function (a) { return { question: a.question, answer: a.label }; })

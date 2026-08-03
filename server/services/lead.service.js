@@ -14,6 +14,11 @@ import { log } from '../utils/logger.js';
 
 const TELEGRAM_TIMEOUT = 10000;
 
+const CHANNEL_LABELS = { telegram: 'Telegram', whatsapp: 'WhatsApp', email: 'Email' };
+function channelLabel(channel) {
+  return CHANNEL_LABELS[channel] || null;
+}
+
 /** Экранирование под parse_mode: HTML — иначе имя вида <b>x</b> сломает сообщение. */
 function esc(value) {
   return String(value ?? '—')
@@ -58,7 +63,7 @@ function buildQuizMessage(lead) {
     '<b>Новая заявка — квиз «Подобрать пакет»</b>',
     '',
     `<b>Имя:</b> ${esc(lead.name)}`,
-    `<b>Контакт:</b> ${esc(lead.contact)}`,
+    `<b>Контакт:</b> ${esc(lead.contact)}${channelLabel(lead.channel) ? ' (' + channelLabel(lead.channel) + ')' : ''}`,
     '',
     `<b>Рекомендован пакет:</b> ${esc(pkg.name)} (${esc(pkg.price)})`,
     '',
@@ -115,7 +120,7 @@ async function saveQuizToFile(lead, reason) {
       receivedAt: new Date().toISOString(),
       reason,
       source: lead.source || 'quiz_calculate',
-      lead: { name: lead.name, contact: lead.contact, comment: lead.comment || null },
+      lead: { name: lead.name, contact: lead.contact, channel: lead.channel || null, comment: lead.comment || null },
       package: lead.package || null,
       answers: lead.answers || []
     });
@@ -124,6 +129,74 @@ async function saveQuizToFile(lead, reason) {
     return { ok: true, channel: 'file' };
   } catch (err) {
     log.error('quiz_lead_save_failed', { message: String(err?.message).slice(0, 120) });
+    return { ok: false };
+  }
+}
+
+function buildContactMessage(lead) {
+  return [
+    '<b>Новая заявка — форма «Связаться»</b>',
+    '',
+    `<b>Имя:</b> ${esc(lead.name)}`,
+    `<b>Контакт:</b> ${esc(lead.contact)}${channelLabel(lead.channel) ? ' (' + channelLabel(lead.channel) + ')' : ''}`,
+    '',
+    lead.comment ? `<b>Сообщение:</b> ${esc(lead.comment)}` : '',
+    `<i>Источник: ${esc(lead.source || 'contact_form')}</i>`
+  ].filter(Boolean).join('\n');
+}
+
+/**
+ * Заявка из обычной формы связи (секция 10, index.html) — без пакета
+ * и без ответов квиза, просто имя/контакт/комментарий. Отдельно от
+ * sendQuizLead() ради понятного текста сообщения в Telegram; канал
+ * доставки (Telegram → файл-фолбэк) тот же.
+ */
+export async function sendContactLead(lead) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const text = buildContactMessage(lead);
+
+  if (token && chatId) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+        signal: AbortSignal.timeout(TELEGRAM_TIMEOUT)
+      });
+      if (res.ok) return { ok: true, channel: 'telegram' };
+      log.error('telegram_send_failed', { status: res.status, source: 'contact' });
+    } catch (err) {
+      log.error('telegram_network_error', { name: err?.name, source: 'contact' });
+    }
+    return saveContactToFile(lead, 'telegram_failed');
+  }
+
+  return saveContactToFile(lead, 'not_configured');
+}
+
+/** DEV-ONLY fallback, отдельный файл — тот же принцип, что у quiz-leads.json. */
+async function saveContactToFile(lead, reason) {
+  const file = path.join(TEMP_DIR, 'contact-leads.json');
+  try {
+    await fs.mkdir(TEMP_DIR, { recursive: true });
+    let list = [];
+    try {
+      list = JSON.parse(await fs.readFile(file, 'utf8'));
+      if (!Array.isArray(list)) list = [];
+    } catch { /* файла ещё нет */ }
+
+    list.push({
+      receivedAt: new Date().toISOString(),
+      reason,
+      source: lead.source || 'contact_form',
+      lead: { name: lead.name, contact: lead.contact, channel: lead.channel || null, comment: lead.comment || null }
+    });
+    await fs.writeFile(file, JSON.stringify(list, null, 2), 'utf8');
+    log.warn('contact_lead_saved_to_file', { reason });
+    return { ok: true, channel: 'file' };
+  } catch (err) {
+    log.error('contact_lead_save_failed', { message: String(err?.message).slice(0, 120) });
     return { ok: false };
   }
 }

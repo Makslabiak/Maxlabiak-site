@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 import { runAudit, getStoredReport } from './controllers/audit.controller.js';
 import { AuditError, normalizeUrl } from './utils/validate-url.js';
-import { sendLead, sendQuizLead } from './services/lead.service.js';
+import { sendLead, sendQuizLead, sendContactLead } from './services/lead.service.js';
 import { cleanupScreenshots, TEMP_DIR } from './services/screenshot.service.js';
 import { log } from './utils/logger.js';
 
@@ -148,6 +148,7 @@ const quizLeadSchema = z.object({
   source: z.string().max(60).optional(),
   name: z.string().trim().min(2, 'Укажите имя').max(80),
   contact: z.string().trim().min(3, 'Укажите способ связи').max(120),
+  channel: z.enum(['telegram', 'whatsapp', 'email']).optional(),
   comment: z.string().trim().max(1000).optional().or(z.literal('')),
   consent: z.literal(true, { errorMap: () => ({ message: 'Нужно согласие на обработку данных' }) }),
   package: quizPackageSchema,
@@ -169,6 +170,33 @@ app.post('/api/quiz-lead', leadLimiter, async (req, res) => {
   }
 
   log.info('quiz_lead_submitted', { source: parsed.data.source || null, package: parsed.data.package.id, channel: result.channel });
+  res.json({ success: true });
+});
+
+const contactLeadSchema = z.object({
+  source: z.string().max(60).optional(),
+  name: z.string().trim().min(2, 'Укажите имя').max(80),
+  contact: z.string().trim().min(3, 'Укажите способ связи').max(120),
+  channel: z.enum(['telegram', 'whatsapp', 'email']).optional(),
+  comment: z.string().trim().max(1000).optional().or(z.literal('')),
+  consent: z.literal(true, { errorMap: () => ({ message: 'Нужно согласие на обработку данных' }) })
+});
+
+app.post('/api/contact-lead', leadLimiter, async (req, res) => {
+  const parsed = contactLeadSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false, code: 'invalid',
+      error: parsed.error.issues[0]?.message || 'Проверьте заполнение формы'
+    });
+  }
+
+  const result = await sendContactLead(parsed.data);
+  if (!result.ok) {
+    return res.status(502).json({ success: false, code: 'send_failed', error: 'Не удалось отправить заявку. Напишите в Telegram' });
+  }
+
+  log.info('contact_lead_submitted', { source: parsed.data.source || null, channel: result.channel });
   res.json({ success: true });
 });
 

@@ -362,6 +362,9 @@ body.header-scrolled .site-header__actions {
 .card{background:var(--color-card);border:1px solid var(--border-light);
       border-radius:var(--radius-block);transition:border-color var(--ease-fast)}
 .card:hover{border-color:var(--border-light-hv)}
+/* у карточек отзывов ховер не нужен — отменяем именно для .review,
+   не трогая :hover у остальных .card по сайту */
+.card.review:hover{border-color:var(--border-light)}
 /* плашка статистики "обо мне" — не карточка-ссылка, ховер здесь не нужен */
 .about__stats:hover{border-color:var(--border-light)}
 
@@ -1001,45 +1004,75 @@ body.header-scrolled .site-header__actions {
                     border:1px solid var(--border-dark);background:none;color:var(--color-white);
                     font:400 17px/1.3 var(--font-text);cursor:pointer;transition:border-color .2s,background .2s}
 .brief__opts button:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.05)}
-/* инлайн-поле "свой вариант" — выглядит как ещё один пункт списка,
-   а не всплывает отдельно: та же рамка/радиус/высота, что у кнопок,
-   только вместо текста — прозрачный input и кнопка-стрелка справа */
-.brief__opt-free{display:flex;align-items:center;gap:8px;
-                 padding:8px 8px 8px 22px;border-radius:10px;
-                 border:1px solid var(--border-dark);transition:border-color .2s}
-.brief__opt-free:focus-within{border-color:var(--color-accent)}
-.brief__free-input{flex:1;min-width:0;padding:7px 0;border:0;background:none;
-                   color:var(--color-white);font:400 17px/1.3 var(--font-text)}
-.brief__free-input::placeholder{color:var(--muted-dark)}
-.brief__free-input:focus{outline:none}
-/* .brief__opt-free .brief__free-btn — специфичность выше, чем у общего
-   .brief__opts button (тот задаёt прозрачный фон всем кнопкам-вариантам
-   и иначе перебивает зелёный фон здесь) */
-.brief__opt-free .brief__free-btn{flex-shrink:0;width:44px;height:38px;border-radius:10px;border:0;
-                 background:var(--color-accent);color:var(--color-dark);
-                 font:500 17px/1 var(--font-display);cursor:pointer;
-                 display:flex;align-items:center;justify-content:center;
-                 transition:opacity .2s}
-.brief__opt-free .brief__free-btn:hover{background:var(--color-accent);opacity:.85}
-/* невалидное поле — красная обводка + лёгкая тряска для внимания */
-.brief__opt-free.is-error{border-color:var(--color-bad);animation:brief-shake .25s ease}
-@keyframes brief-shake{
-  0%,100%{transform:translateX(0)}
-  25%{transform:translateX(-5px)}
-  75%{transform:translateX(5px)}
-}
-/* тост с ошибкой — выезжает снизу по центру карточки, сам гаснет */
-.brief__toast{position:absolute;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
-             padding:12px 22px;border-radius:var(--radius-pill);
-             background:var(--color-bad);color:#fff;
-             font:500 14px/1.3 var(--font-text);white-space:nowrap;
-             opacity:0;pointer-events:none;
-             transition:opacity .3s ease,transform .3s ease;z-index:5}
-.brief__toast.is-visible{opacity:1;transform:translateX(-50%) translateY(0)}
 .brief__done{text-align:center;padding:26px 0}
 .brief__done-check{font-size:53px;line-height:1;color:var(--color-accent);margin-bottom:18px}
 .brief__done-title{font:500 22px/1.2 var(--font-display);color:var(--color-white);margin-bottom:9px}
 .brief__done-text{font:400 15px/1.4 var(--font-text);color:var(--muted-dark)}
+
+/* ---- 10 СВЯЗАТЬСЯ: обычная форма, слева серый плейсхолдер на всю
+   высоту карточки (пока без реального фото), вместо старого
+   брифа-квиза. Тёмная тема (внутри .card-dark), поэтому поля
+   используют var(--muted-dark)/var(--border-dark)/var(--color-white) —
+   "-dark" здесь значит "для тёмного фона", а не цвет самого текста
+   (см. коммент в tariff-quiz.css, тот же принцип во всём проекте).
+
+   Здесь grid с дефолтным align-items:stretch — то, что раньше было
+   багом для настоящей картинки (растягивало высоту, ломая aspect-ratio),
+   теперь ровно то, что нужно: плейсхолдер без своего соотношения
+   сторон просто тянется на всю высоту формы. */
+.contact-form{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,4vw,56px)}
+.contact-form__photo{width:100%;height:100%;min-height:320px;
+                     border-radius:var(--radius-block);background:rgba(255,255,255,.08)}
+.contact-form__body .h2{margin-bottom:10px}
+.contact-form__body .lead{margin-bottom:clamp(24px,2.8vw,32px)}
+
+.cf-field{margin-bottom:14px}
+.cf-label{display:block;font:400 13px/1.2 var(--font-text);color:var(--muted-dark);margin-bottom:7px}
+.cf-input{width:100%;background:none;border:1px solid var(--border-dark);border-radius:10px;
+          color:var(--color-white);font:400 16px/1.3 var(--font-text);
+          padding:15px 18px;transition:border-color .2s}
+.cf-input::placeholder{color:var(--muted-dark)}
+.cf-input:focus{outline:none;border-color:var(--color-accent)}
+.cf-input.is-error{border-color:var(--color-bad)}
+.cf-textarea{resize:vertical;min-height:90px;font-family:var(--font-text)}
+
+/* переключатель канала связи (Telegram/WhatsApp/Email) — иконки над
+   полем контакта, меняют плейсхолдер/валидацию/allowed-символы в JS.
+   Тёмная тема: иконки принудительно белые (filter, исходные SVG разного
+   цвета — TG почти белый, WhatsApp тёмно-серый, без фильтра WhatsApp
+   не виден на тёмном фоне), при активном лаймовом фоне — чёрные
+   для контраста, тем же приёмом, что и .faq__cta-icon. */
+.cf-channels{display:flex;gap:8px;margin-bottom:10px}
+.cf-channel{width:40px;height:40px;border-radius:50%;border:1px solid var(--border-dark);
+            background:none;display:flex;align-items:center;justify-content:center;
+            cursor:pointer;transition:border-color .2s,background .2s}
+.cf-channel img{width:18px;height:18px;display:block;filter:brightness(0) invert(1)}
+.cf-channel-at{font:500 18px/1 var(--font-display);color:var(--color-white)}
+.cf-channel:hover{border-color:rgba(255,255,255,.4)}
+.cf-channel.is-active{border-color:var(--color-accent);background:var(--color-accent)}
+.cf-channel.is-active img{filter:brightness(0)}
+.cf-channel.is-active .cf-channel-at{color:var(--color-dark)}
+
+/* ошибка конкретного поля — под самим полем, а не общая на всю форму */
+.cf-field-error{display:none;font:400 13px/1.35 var(--font-text);color:var(--color-bad);margin:6px 0 0}
+.cf-field-error.is-visible{display:block}
+
+.cf-error{display:none;font:400 13px/1.35 var(--font-text);color:var(--color-bad);margin:-6px 0 14px}
+.cf-error.is-visible{display:block}
+
+.cf-check{display:flex;align-items:flex-start;gap:10px;font:400 13px/1.45 var(--font-text);
+          color:var(--muted-dark);cursor:pointer;margin:4px 0 18px}
+.cf-check input{width:18px;height:18px;margin-top:1px;accent-color:var(--color-accent);flex-shrink:0}
+.cf-check-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.cf-check-link:hover{color:var(--color-white)}
+
+.cf-btn-wide{width:100%}
+
+@media (max-width:720px){
+  .contact-form{grid-template-columns:1fr;text-align:center}
+  .contact-form__photo{min-height:200px}
+  .cf-check{text-align:left}
+}
 
 /* ---- 10.1 БРИФ: 721–900px, точечное исключение ----
    .brief — грид 1fr 1fr (заголовок слева, квиз справа), на 721–900px
@@ -1443,21 +1476,21 @@ body.header-scrolled .site-header__actions {
     <nav class="nav">
       <a href="#cases">Кейсы</a>
       <a href="#pricing">Стоимость</a>
-      <a href="#brief">Бриф</a>
+      <a href="#brief">Написать</a>
       <a href="#about">Обо мне</a>
       <a href="#faq">FAQ</a>
     </nav>
   </div>
 
   <div class="site-header__actions">
-    <a class="tg-btn" href="https://t.me/maxlobyak" aria-label="Telegram">
+    <a class="tg-btn" href="https://t.me/maxlobyak" target="_blank" rel="noopener" aria-label="Telegram">
       <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="">
       <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="">
     </a>
-    <a class="contact" href="#brief">Связаться</a>
+    <a class="contact" href="https://t.me/maxlobyak" target="_blank" rel="noopener">Связаться</a>
 
     <div class="compact-head">
-      <a class="contact-pill" href="#brief">Связаться</a>
+      <a class="contact-pill" href="https://t.me/maxlobyak">Связаться</a>
       <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
         <span class="burger__lines"><span></span><span></span><span></span></span>
       </button>
@@ -1468,7 +1501,7 @@ body.header-scrolled .site-header__actions {
         <img class="tg-btn__icon tg-btn__icon--a" src="images/00-shapka/icon-telegram.svg" alt="">
         <img class="tg-btn__icon tg-btn__icon--b" src="images/00-shapka/icon-telegram.svg" alt="">
       </a>
-      <a class="mobile__contact" href="#brief">Связаться</a>
+      <a class="mobile__contact" href="https://t.me/maxlobyak">Связаться</a>
       <button class="burger burger--sm" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Меню">
         <span class="burger__lines"><span></span><span></span><span></span></span>
       </button>
@@ -1479,7 +1512,7 @@ body.header-scrolled .site-header__actions {
 <nav class="mobile-menu" id="mobile-menu">
   <a href="#cases">Кейсы</a>
   <a href="#pricing">Стоимость</a>
-  <a href="#brief">Бриф</a>
+  <a href="#brief">Написать</a>
   <a href="#about">Обо мне</a>
   <a href="#faq">FAQ</a>
 </nav>
@@ -1654,8 +1687,7 @@ body.header-scrolled .site-header__actions {
       <h2 class="h2 diff__title">Ваши конкуренты выглядят одинаково</h2>
       <p class="diff__lead">Синий градиент, стоковые строители, «качественно и&nbsp;в&nbsp;срок».<br>Это можно использовать.</p>
       <div class="diff__row">
-        <a class="btn btn--black" href="#brief">Заказать разработку</a>
-        <p class="diff__note">Отвечу за&nbsp;15&nbsp;минут</p>
+        <a class="btn btn--black" href="#pricing">Заказать разработку</a>
       </div>
     </div>
 
@@ -1857,7 +1889,7 @@ body.header-scrolled .site-header__actions {
           <li class="is-on">Адаптация под&nbsp;мобильные устройства</li>
         </ul>
       </div>
-      <a class="btn btn--dark" href="#brief">Обсудить проект</a>
+      <a class="btn btn--dark" href="#pricing" data-pack-open="start">Обсудить проект</a>
     </div>
     <div class="card pack pack--hl" data-pack="plus">
       <div class="pack__head">
@@ -1887,7 +1919,7 @@ body.header-scrolled .site-header__actions {
           <li class="is-on">Плавная анимация интерфейса</li>
         </ul>
       </div>
-      <a class="btn btn--lime" href="#brief">Начать проект</a>
+      <a class="btn btn--lime" href="#pricing" data-pack-open="plus">Начать проект</a>
     </div>
     <div class="card pack" data-pack="corp">
       <div class="pack__head">
@@ -1913,7 +1945,7 @@ body.header-scrolled .site-header__actions {
           <li class="is-on">Блог или&nbsp;раздел новостей</li>
         </ul>
       </div>
-      <a class="btn btn--dark" href="#brief">Получить расчёт</a>
+      <a class="btn btn--dark" href="#pricing" data-pack-open="corp">Получить расчёт</a>
     </div>
   </div>
   <div class="packs__foot">
@@ -2004,15 +2036,15 @@ body.header-scrolled .site-header__actions {
   <div class="faq__cta">
     <p class="faq__cta-text">Не&nbsp;нашли ответ на&nbsp;свой вопрос?<br>Напишите мне напрямую, отвечу за&nbsp;15&nbsp;минут.</p>
     <div class="faq__cta-icons">
-      <a class="faq__cta-icon" href="https://t.me/maxlobyak" aria-label="Telegram">
+      <a class="faq__cta-icon" href="https://t.me/maxlobyak" target="_blank" rel="noopener" aria-label="Telegram">
         <img class="faq__icon-img faq__icon-img--a" src="images/00-shapka/icon-telegram.svg" alt="">
         <img class="faq__icon-img faq__icon-img--b" src="images/00-shapka/icon-telegram.svg" alt="">
       </a>
-      <a class="faq__cta-icon" href="https://wa.me/375257950710" aria-label="WhatsApp">
+      <a class="faq__cta-icon" href="https://wa.me/375257950710" target="_blank" rel="noopener" aria-label="WhatsApp">
         <img class="faq__icon-img faq__icon-img--a" src="images/10-faq/WhatsApp.svg" alt="">
         <img class="faq__icon-img faq__icon-img--b" src="images/10-faq/WhatsApp.svg" alt="">
       </a>
-      <a class="faq__cta-icon" href="mailto:lobyak2401@mail.ru" aria-label="Email">
+      <a class="faq__cta-icon" href="mailto:lobyak2401@mail.ru" target="_blank" rel="noopener" aria-label="Email">
         <span class="faq__mail faq__mail--a">@</span>
         <span class="faq__mail faq__mail--b">@</span>
       </a>
@@ -2020,15 +2052,42 @@ body.header-scrolled .site-header__actions {
   </div>
 </section>
 
-<!-- ===== 10 БРИФ ===== -->
+<!-- ===== 10 СВЯЗАТЬСЯ ===== -->
 <section class="frame--flow frame--inset" id="brief">
   <div class="card-dark">
-    <div class="brief">
-      <div>
-        <h2 class="h2 h2--light">Ответьте на&nbsp;5&nbsp;вопросов&nbsp;— пришлю структуру и&nbsp;смету</h2>
-        <p class="lead lead--dark">Меньше минуты, ни&nbsp;к&nbsp;чему не&nbsp;обязывает.<br>Отвечу в&nbsp;течение часа.</p>
+    <div class="contact-form">
+      <div class="contact-form__photo"></div>
+      <div class="contact-form__body">
+        <h2 class="h2 h2--light">Обсудим ваш проект?</h2>
+        <p class="lead lead--dark">Оставьте контакт&nbsp;— отвечу в&nbsp;течение часа.</p>
+        <form id="contactForm" novalidate>
+          <div class="cf-field">
+            <label class="cf-label" for="cfName">Как вас зовут</label>
+            <input class="cf-input" id="cfName" name="name" maxlength="80" autocomplete="name" placeholder="Максим">
+            <p class="cf-field-error" data-error-for="name"></p>
+          </div>
+          <div class="cf-field">
+            <label class="cf-label">Способ связи</label>
+            <div class="cf-channels" id="cfChannels">
+              <button type="button" class="cf-channel is-active" data-channel="telegram" aria-label="Telegram"><img src="images/00-shapka/icon-telegram.svg" alt=""></button>
+              <button type="button" class="cf-channel" data-channel="whatsapp" aria-label="WhatsApp"><img src="images/10-faq/WhatsApp.svg" alt=""></button>
+              <button type="button" class="cf-channel" data-channel="email" aria-label="Email"><span class="cf-channel-at">@</span></button>
+            </div>
+            <input class="cf-input" id="cfContact" name="contact" maxlength="120" placeholder="@username">
+            <p class="cf-field-error" data-error-for="contact"></p>
+          </div>
+          <div class="cf-field">
+            <label class="cf-label" for="cfMessage">Коротко о&nbsp;проекте (необязательно)</label>
+            <textarea class="cf-input cf-textarea" id="cfMessage" name="comment" maxlength="1000" rows="3" placeholder="Например: нужен сайт для ремонта квартир"></textarea>
+          </div>
+          <p class="cf-error" data-cf-error></p>
+          <label class="cf-check">
+            <input type="checkbox" name="consent" required>
+            <span>Согласен на обработку <a href="/" class="cf-check-link">персональным данным</a></span>
+          </label>
+          <button type="submit" class="btn btn--lime cf-btn-wide">Отправить</button>
+        </form>
       </div>
-      <div class="brief__box" id="briefBox"></div>
     </div>
   </div>
 </section>
@@ -2038,8 +2097,8 @@ body.header-scrolled .site-header__actions {
   <div class="footer">
     <p class="footer__legal">Лобяк Максим Андреевич, УНП AE6542605<br>109&nbsp;инспекция МНС по&nbsp;Фрунзенскому району г.&nbsp;Минска №2</p>
     <div class="footer__links">
-      <a href="https://t.me/maxlobyak">Telegram</a>
-      <a href="https://wa.me/375257950710">WhatsApp</a>
+      <a href="https://t.me/maxlobyak" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://wa.me/375257950710" target="_blank" rel="noopener">WhatsApp</a>
       <a href="mailto:lobyak2401@mail.ru?subject=%D0%A5%D0%BE%D1%87%D1%83%20%D0%BE%D0%B1%D1%81%D1%83%D0%B4%D0%B8%D1%82%D1%8C%20%D1%81%D0%B0%D0%B9%D1%82">lobyak2401@mail.ru</a>
     </div>
     <p class="footer__copy"><span id="year"></span></p>
@@ -2691,108 +2750,137 @@ window.scrollLock = (function () {
   window.addEventListener('load', check);
 })();
 
-/* ── 4. Бриф-квиз ── */
+/* ── 4. Форма "Связаться" (секция 10) — обычная форма с фото,
+      без квиза. Успех — тот же .brief__done, что и раньше использовался
+      для бриф-квиза (разметка уже есть в CSS, дублировать незачем). ── */
 (function () {
-  var box = document.getElementById('briefBox');
-  if (!box) return;
+  var form = document.getElementById('contactForm');
+  if (!form) return;
 
-  var questions = [
-    { id: 'objects',  q: 'Какие объекты вы ремонтируете?',        options: ['Квартиры', 'Дома', 'Коммерческие помещения', 'Несколько направлений'] },
-    { id: 'city',     q: 'В каком городе или регионе работаете?', options: ['Москва и область', 'Санкт-Петербург и область', 'Несколько регионов', { free: true, placeholder: 'Свой вариант, например, Казань' }] },
-    { id: 'site',     q: 'Есть ли у вас сайт сейчас?',            options: ['Нет', 'Есть, но не приносит заявки', 'Есть, хотим полностью обновить'] },
-    { id: 'ads',      q: 'Откуда сейчас приходят клиенты?',       options: ['Яндекс Директ', 'Авито', 'Рекомендации', 'Несколько каналов', 'Рекламу ещё не запускали'] },
-    { id: 'timeline', q: 'Когда хотите запустить новый сайт?',    options: ['Как можно скорее', 'В течение 1–2 недель', 'В течение месяца', 'Пока изучаю варианты'] }
-  ];
+  var API_BASE = (function () {
+    if (window.SITE_AUDIT_API) return window.SITE_AUDIT_API;
+    var isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+    if (isLocal && location.port !== '3000') return 'http://localhost:3000';
+    if (location.protocol === 'file:') return 'http://localhost:3000';
+    return '';
+  })();
 
-  var step = 0;
-  var answers = {};
+  /* переключатель канала связи над полем контакта — у каждого канала
+     свой набор разрешённых символов, свой плейсхолдер и своя проверка,
+     вместо одной общей регулярки, пытавшейся угадать канал по виду
+     введённого текста (путалась на WhatsApp-юзернеймах с точками) */
+  var CHANNELS = {
+    telegram: {
+      placeholder: '@username', allowed: /[^a-zA-Z0-9_@]/g,
+      validate: function (v) { return /^@[a-zA-Z0-9_]{5,32}$/.test(v.trim()); },
+      error: 'Введите @username в Telegram (5–32 символа)'
+    },
+    whatsapp: {
+      placeholder: '+7 900 123-45-67', allowed: /[^0-9+\-\s()]/g,
+      validate: function (v) { return /^\+?\d{6,15}$/.test(v.replace(/[\s\-()]/g, '')); },
+      error: 'Введите номер телефона WhatsApp'
+    },
+    email: {
+      placeholder: 'you@example.com', allowed: /[^a-zA-Z0-9@._\-+]/g,
+      validate: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); },
+      error: 'Введите корректный email'
+    }
+  };
 
-  function esc(str) {
-    return String(str).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  var contactInput = form.querySelector('[name="contact"]');
+  var channelBtns = form.querySelectorAll('.cf-channel');
+  var currentChannel = 'telegram';
+
+  channelBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      currentChannel = btn.getAttribute('data-channel');
+      contactInput.placeholder = CHANNELS[currentChannel].placeholder;
+      contactInput.value = ''; // старое значение почти наверняка не подходит под новый формат
+      channelBtns.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+      clearFieldError('contact');
+      contactInput.focus();
     });
-  }
+  });
 
-  function render() {
-    if (step >= questions.length) {
-      box.innerHTML =
-        '<div class="brief__done">' +
-          '<div class="brief__done-check">✓</div>' +
-          '<p class="brief__done-title">Отлично, спасибо!</p>' +
-          '<p class="brief__done-text">Свяжусь в течение часа. В рабочее время — быстрее.</p>' +
-        '</div>';
-      return;
+  contactInput.addEventListener('input', function () {
+    var cleaned = contactInput.value.replace(CHANNELS[currentChannel].allowed, '');
+    if (cleaned !== contactInput.value) contactInput.value = cleaned;
+  });
+
+  function setFieldError(fieldName, message) {
+    var input = form.querySelector('[name="' + fieldName + '"]');
+    var errorEl = form.querySelector('[data-error-for="' + fieldName + '"]');
+    if (input) input.classList.add('is-error');
+    if (errorEl) { errorEl.textContent = message; errorEl.classList.add('is-visible'); }
+  }
+  function clearFieldError(fieldName) {
+    var input = form.querySelector('[name="' + fieldName + '"]');
+    var errorEl = form.querySelector('[data-error-for="' + fieldName + '"]');
+    if (input) input.classList.remove('is-error');
+    if (errorEl) { errorEl.textContent = ''; errorEl.classList.remove('is-visible'); }
+  }
+  // ошибку убираем сразу по клику/фокусу на поле, не дожидаясь ввода
+  form.querySelectorAll('.cf-input').forEach(function (input) {
+    input.addEventListener('focus', function () { clearFieldError(input.name); });
+    input.addEventListener('input', function () { clearFieldError(input.name); });
+  });
+  // отдельно: чекбокс согласия не .cf-input, ошибка на нём — общий cf-error
+  form.querySelector('[name="consent"]').addEventListener('change', function () {
+    if (this.checked) form.querySelector('[data-cf-error]').classList.remove('is-visible');
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var errorEl = form.querySelector('[data-cf-error]');
+    errorEl.classList.remove('is-visible');
+    clearFieldError('name');
+    clearFieldError('contact');
+
+    var name = form.name.value.trim();
+    var contact = form.contact.value.trim();
+    var comment = form.comment.value.trim();
+    var consent = form.consent.checked;
+    var hasError = false;
+
+    function showError(text) {
+      errorEl.textContent = text;
+      errorEl.classList.add('is-visible');
     }
 
-    var cur = questions[step];
-    var bars = questions.map(function (_, i) {
-      return '<span class="' + (i <= step ? 'is-on' : '') + '"></span>';
-    }).join('');
-    /* опции бывают строкой (обычная кнопка) или объектом { free:true }
-       (инлайн-поле ввода прямо в списке, без всплытия) */
-    var opts = cur.options.map(function (o) {
-      if (o && typeof o === 'object' && o.free) {
-        return '<div class="brief__opt-free">' +
-                 '<input type="text" class="brief__free-input" placeholder="' + esc(o.placeholder) + '" maxlength="60">' +
-                 '<button type="button" class="brief__free-btn" aria-label="Ответить">→</button>' +
-               '</div>';
-      }
-      return '<button type="button" data-value="' + esc(o) + '">' + esc(o) + '</button>';
-    }).join('');
-
-    box.innerHTML =
-      '<div class="brief__bars">' + bars + '</div>' +
-      '<p class="brief__counter">Вопрос ' + (step + 1) + ' из ' + questions.length + '</p>' +
-      '<p class="brief__q">' + esc(cur.q) + '</p>' +
-      '<div class="brief__opts">' + opts + '</div>' +
-      '<div class="brief__toast" id="briefToast">Выберите хотя&nbsp;бы один вариант</div>';
-
-    box.querySelectorAll('.brief__opts button[data-value]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        answers[cur.id] = btn.getAttribute('data-value');
-        step++;
-        render();
-      });
-    });
-
-    /* инлайн-поле "свой вариант" — уже в списке, ничего не открывается
-       по клику; подтверждение — по стрелке или Enter */
-    var freeRow = box.querySelector('.brief__opt-free');
-    if (freeRow) {
-      var freeInput = freeRow.querySelector('.brief__free-input');
-      var toast = document.getElementById('briefToast');
-      var toastTimer = null;
-      var showError = function () {
-        freeRow.classList.remove('is-error');
-        /* убираем и сразу навешиваем класс заново — иначе повторный клик
-           подряд не перезапустит CSS-анимацию тряски (браузер видит,
-           что класс не менялся, и просто не проигрывает keyframes снова) */
-        void freeRow.offsetWidth;
-        freeRow.classList.add('is-error');
-        toast.classList.add('is-visible');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          toast.classList.remove('is-visible');
-        }, 2600);
-      };
-      var submitFree = function () {
-        var val = freeInput.value.trim();
-        if (!val) { showError(); freeInput.focus(); return; }
-        answers[cur.id] = val;
-        step++;
-        render();
-      };
-      freeInput.addEventListener('input', function () {
-        freeRow.classList.remove('is-error');
-      });
-      freeInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') submitFree();
-      });
-      freeRow.querySelector('.brief__free-btn').addEventListener('click', submitFree);
+    if (name.length < 2) { setFieldError('name', 'Укажите имя'); hasError = true; }
+    if (!CHANNELS[currentChannel].validate(contact)) {
+      setFieldError('contact', CHANNELS[currentChannel].error);
+      hasError = true;
     }
-  }
+    if (!consent) return showError('Нужно согласие на обработку данных');
+    if (hasError) return;
 
-  render();
+    var submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Отправляю…';
+
+    fetch(API_BASE + '/api/contact-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: 'contact_form', name: name, contact: contact, channel: currentChannel, comment: comment, consent: true })
+    }).then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (r) {
+        if (!r.ok || !r.data.success) {
+          throw new Error((r.data && r.data.error) || 'Не удалось отправить заявку');
+        }
+        form.parentElement.innerHTML =
+          '<div class="brief__done">' +
+            '<div class="brief__done-check">✓</div>' +
+            '<p class="brief__done-title">Отлично, спасибо!</p>' +
+            '<p class="brief__done-text">Свяжусь в течение часа. В рабочее время — быстрее.</p>' +
+          '</div>';
+      })
+      .catch(function (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Отправить';
+        showError(err.message || 'Не удалось отправить. Напишите в Telegram');
+      });
+  });
 })();
 
 /* ── 4.5. Аккордеон FAQ. Открыт максимум один вопрос за раз —

@@ -3,3 +3,8 @@ node_modules/
 server/temp/*
 !server/temp/.gitkeep
 .DS_Store
+
+# статика для Netlify (собирается из index.html/assets перед деплоем,
+# не исходники, плюс .netlify/ хранит siteId) и метаданные Netlify-сайта
+deploy-netlify/
+site-info.json
