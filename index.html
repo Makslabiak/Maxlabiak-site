@@ -2724,6 +2724,8 @@ window.scrollLock = (function () {
   var count = group.querySelectorAll('.diff__shot').length;
 
   if (mobileQuery.matches) {
+   try { // ВРЕМЕННО: ловим любую тихую ошибку и показываем её на экране —
+         // три захода вслепую ничего не дали, нужен факт, не догадка
     // ИСПРАВЛЕНО (было два бага):
     // 1) translateX считался как pageIndex*shotW без учёта gap:12px
     //    между кадрами (.diff__group{gap:12px} в мобильном CSS) —
@@ -2793,6 +2795,28 @@ window.scrollLock = (function () {
       shotW = viewport.clientWidth - padX * 2;
       shots.forEach(function (s) { s.style.width = shotW + 'px'; });
       move(false);
+
+      // ВРЕМЕННЫЙ отладочный вывод — реальные цифры прямо на экране,
+      // раз три захода вслепую (измерение DOM, чтение CSS-переменной,
+      // чистая арифметика) дали один и тот же результат на скриншотах.
+      // Убрать после того, как найдём причину.
+      var dbg = document.getElementById('diffDebugInfo');
+      if (!dbg) {
+        dbg = document.createElement('div');
+        dbg.id = 'diffDebugInfo';
+        dbg.style.cssText = 'position:absolute;top:4px;left:4px;z-index:999;' +
+          'background:#f00;color:#fff;font:11px/1.4 monospace;padding:6px 8px;' +
+          'white-space:pre-wrap;border-radius:4px;max-width:90%;pointer-events:none';
+        viewport.style.position = 'relative';
+        viewport.appendChild(dbg);
+      }
+      dbg.textContent = 'vw=' + window.innerWidth +
+        ' vpClientW=' + viewport.clientWidth +
+        ' padX=' + padX.toFixed(1) +
+        ' shotW=' + shotW.toFixed(1) +
+        ' pageIdx=' + pageIndex +
+        ' padLeftCS=' + getComputedStyle(viewport).paddingLeft +
+        ' padRightCS=' + getComputedStyle(viewport).paddingRight;
     }
 
     layout();
@@ -2817,6 +2841,11 @@ window.scrollLock = (function () {
     // защёлка isAnimating внутри goTo не даёт автосвайпу вызвать
     // следующий шаг, пока текущий переход ещё едет
     setInterval(function () { goTo(pageIndex + 1); }, 4000);
+   } catch (err) {
+    viewport.innerHTML = '<div style="background:#f00;color:#fff;font:12px/1.4 monospace;' +
+      'padding:10px;white-space:pre-wrap">DIFF CAROUSEL JS ERROR:\n' +
+      (err && (err.message || err)) + '</div>';
+   }
 
     return; // непрерывный rAF-цикл ниже на мобильном не нужен
   }
