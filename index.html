@@ -2815,8 +2815,8 @@ window.scrollLock = (function () {
         dbg = document.createElement('div');
         dbg.id = 'diffDebugInfo';
         dbg.style.cssText = 'position:absolute;top:4px;left:4px;z-index:999;' +
-          'background:#f00;color:#fff;font:11px/1.4 monospace;padding:6px 8px;' +
-          'white-space:pre-wrap;border-radius:4px;max-width:90%;pointer-events:none';
+          'background:#f00;color:#fff;font:9px/1.35 monospace;padding:6px 8px;' +
+          'white-space:pre-wrap;border-radius:4px;max-width:96%;pointer-events:none';
         viewport.style.position = 'relative';
         viewport.appendChild(dbg);
       }
@@ -2826,7 +2826,11 @@ window.scrollLock = (function () {
         ' shotW=' + shotW.toFixed(1) +
         ' pageIdx=' + pageIndex +
         ' padLeftCS=' + getComputedStyle(viewport).paddingLeft +
-        ' padRightCS=' + getComputedStyle(viewport).paddingRight;
+        ' padRightCS=' + getComputedStyle(viewport).paddingRight + '\n' +
+        'vpRect=' + JSON.stringify(viewport.getBoundingClientRect()) + '\n' +
+        'sliderRect=' + JSON.stringify(document.querySelector('.diff__slider').getBoundingClientRect()) + '\n' +
+        'activeShotRect=' + (shots[pageIndex] ? JSON.stringify(shots[pageIndex].getBoundingClientRect()) : 'none') + '\n' +
+        'trackTransform=' + track.style.transform;
     }
 
     layout();
