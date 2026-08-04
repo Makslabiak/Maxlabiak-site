@@ -253,10 +253,10 @@
       '<div class="tqm__panel" role="dialog" aria-modal="true" aria-labelledby="tqmReco" tabindex="-1">' +
         '<button type="button" class="tqm__close" data-tqm-close aria-label="Закрыть окно">&times;</button>' +
         '<div class="tqm__scroll">' +
+          '<p class="tqm__reco" id="tqmReco" data-tqm-reco></p>' +
           '<div class="tqm__grid">' +
             '<div class="tqm__card" data-tqm-card></div>' +
             '<div class="tqm__right">' +
-              '<p class="tqm__reco" id="tqmReco" data-tqm-reco></p>' +
               '<div data-tqm-form></div>' +
             '</div>' +
           '</div>' +

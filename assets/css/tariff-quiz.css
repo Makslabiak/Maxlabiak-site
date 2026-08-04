@@ -149,7 +149,7 @@
 .tqm__reco {
   display: inline-block;
   font: 400 15px/1.5 var(--font-text); color: var(--color-black);
-  padding: 14px 20px; margin-bottom: 24px;
+  padding: 14px 20px; margin-bottom: 28px;
   border-radius: var(--radius-block); background: var(--color-accent);
 }
 .tqm__reco b { font-weight: 700; }

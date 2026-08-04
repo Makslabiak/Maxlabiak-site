@@ -923,7 +923,8 @@ body.header-scrolled .site-header__actions {
            font:600 10px/1 var(--font-text);cursor:help;position:relative;
            vertical-align:middle;flex-shrink:0;padding:0}
 .pack--hl .pack__tip{background:rgba(255,255,255,.15);color:rgba(255,255,255,.65)}
-.pack__tip::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 9px);
+.pack__tip::after{content:attr(data-tip);position:absolute;
+                   left:var(--tip-left,0);bottom:calc(100% + 9px);
                    width:min(270px,70vw);padding:12px 14px;border-radius:10px;
                    background:var(--color-dark);color:#fff;
                    font:400 14.5px/1.45 var(--font-text);text-align:left;
@@ -1471,10 +1472,17 @@ body.header-scrolled .site-header__actions {
      каждого .diff__shot в px через layout(), см. блок 3.6), а не
      бегущая строка. Здесь только структура: горизонтальный ряд вместо
      вертикального, высота — по контенту, gap между кадрами. */
-  .diff__viewport { height: auto; }
+  .diff__viewport { height: auto; overflow: hidden; }
   .diff__track { flex-direction: row; }
   .diff__group { flex-direction: row; gap: 12px; padding-right: 12px; padding-bottom: 0; }
   .diff__shot { width: 100%; height: auto; flex-shrink: 0; }
+  /* вторая .diff__group (aria-hidden, дубликат для бесшовной десктопной
+     вертикальной ленты) на мобильном не нужна — карусель здесь не едет
+     по кругу, а листается по шагам только внутри первой группы (JS,
+     блок 3.6). Без display:none дубль остаётся в общем flex-ряду сразу
+     за настоящими карточками — 6 лишних картинок без выставленной
+     JS-шириной ширины, именно они и ломали прокрутку. */
+  .diff__group[aria-hidden="true"] { display: none; }
   /* точки пагинации были рассчитаны на позицию у правого края
      вертикальной ленты — при горизонтальной ориентации это не тот
      угол, прячем их, чтобы не висели криво в неправильном месте */
@@ -3098,12 +3106,39 @@ window.scrollLock = (function () {
   var tips = document.querySelectorAll('.pack__tip');
   if (!tips.length) return;
 
+  /* бабл (::after) позиционируется как left:0 от кнопки, то есть уходит
+     вправо на фиксированную ширину — рядом с правым краем экрана (почти
+     всегда на мобильном, где список пунктов в одну узкую колонку) он
+     вылезал за viewport. Псевдоэлементу нельзя выставить inline-стиль
+     напрямую, поэтому сдвигаем его через CSS-переменную --tip-left на
+     самой кнопке — единственный канал общения JS с ::after.
+     margin — не просто отступ от края экрана, а отступ с запасом под
+     box-shadow бабла (0 8px 24px): у body стоит overflow-x:clip, и без
+     этого запаса саму тень подрезает прямо по границе вьюпорта. */
+  function positionTip(tip) {
+    tip.style.removeProperty('--tip-left'); // сброс перед пересчётом естественной позиции
+    var bubbleWidth = parseFloat(getComputedStyle(tip, '::after').width) || 270;
+    var rect = tip.getBoundingClientRect();
+    var margin = 28;
+    var naturalRight = rect.left + bubbleWidth;
+    var shift = 0;
+    if (naturalRight > window.innerWidth - margin) {
+      shift = (window.innerWidth - margin) - naturalRight; // уводим влево
+    }
+    if (rect.left + shift < margin) {
+      shift = margin - rect.left; // но не дальше левого края
+    }
+    if (shift) tip.style.setProperty('--tip-left', shift + 'px');
+  }
+
   tips.forEach(function (tip) {
+    tip.addEventListener('mouseenter', function () { positionTip(tip); });
+    tip.addEventListener('focus', function () { positionTip(tip); });
     tip.addEventListener('click', function (e) {
       e.stopPropagation();
       var wasOpen = tip.classList.contains('is-open');
       tips.forEach(function (t) { t.classList.remove('is-open'); });
-      if (!wasOpen) tip.classList.add('is-open');
+      if (!wasOpen) { positionTip(tip); tip.classList.add('is-open'); }
     });
   });
 
