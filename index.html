@@ -2776,12 +2776,22 @@ window.scrollLock = (function () {
     });
 
     function layout() {
-      // clientWidth включает padding-inline (--card-pad-x, зона "пика"
-      // соседних слайдов) — вычитаем его, иначе активный слайд занимал
-      // бы всю ширину подложки вместе с зоной пика, а не только контентную
-      // часть, и подглядывающих соседей не было бы видно вообще.
-      var padX = parseFloat(getComputedStyle(viewport).paddingLeft) || 0;
-      shotW = viewport.clientWidth - padX * 2;
+      // Раньше отступ под "пик" соседних слайдов брался из CSS
+      // (padding-inline: var(--card-pad-x) у .diff__viewport) — держалось
+      // на том, что то же значение переменной совпадёт день в день с
+      // шириной, на которую .diff__slider выше вышел в bleed. Совпадение
+      // есть теоретически, но слайд из-за этого мог оказаться не по
+      // центру при любом маленьком расхождении. Теперь считаем без
+      // допущений: ширина слайда = реальная ширина .diff__row (та же
+      // контентная колонка, что и у заголовка/кнопки), отступ с каждой
+      // стороны — что осталось от ширины окна сверх неё. Выставляем
+      // padding самим JS, CSS-переменная тут больше не участвует.
+      var refEl = document.querySelector('.diff__row');
+      var refWidth = refEl ? refEl.getBoundingClientRect().width : viewport.clientWidth;
+      var padX = Math.max(0, (viewport.clientWidth - refWidth) / 2);
+      viewport.style.paddingLeft = padX + 'px';
+      viewport.style.paddingRight = padX + 'px';
+      shotW = refWidth;
       shots.forEach(function (s) { s.style.width = shotW + 'px'; });
       move(false);
     }
