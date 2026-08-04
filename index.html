@@ -2730,8 +2730,9 @@ window.scrollLock = (function () {
   var count = group.querySelectorAll('.diff__shot').length;
 
   if (mobileQuery.matches) {
-   try { // ВРЕМЕННО: ловим любую тихую ошибку и показываем её на экране —
-         // три захода вслепую ничего не дали, нужен факт, не догадка
+   try { // на случай непредвиденной ошибки на конкретном устройстве —
+         // лучше молча остаться без карусели (JS error виден в консоли),
+         // чем уронить остальной скрипт после этого блока
     // ИСПРАВЛЕНО (было два бага):
     // 1) translateX считался как pageIndex*shotW без учёта gap:12px
     //    между кадрами (.diff__group{gap:12px} в мобильном CSS) —
@@ -2804,42 +2805,6 @@ window.scrollLock = (function () {
         s.style.marginRight = gap + 'px'; // замена CSS gap (см. комментарий в CSS выше)
       });
       move(false);
-
-      // ВРЕМЕННО: рамки прямо на элементах — синяя вокруг viewport
-      // (граница обрезки), пурпурная вокруг реально активного слайда.
-      // Цифры в бейдже совпадают с ожиданием, но на глаз результат
-      // всё равно не по центру — нужно увидеть границы, а не верить
-      // цифрам на слово.
-      viewport.style.outline = '3px solid #0066ff';
-      viewport.style.outlineOffset = '-3px';
-      shots.forEach(function (s) { s.style.outline = 'none'; });
-      if (shots[pageIndex]) shots[pageIndex].style.outline = '4px solid #ff00ff';
-
-      // ВРЕМЕННЫЙ отладочный вывод — реальные цифры прямо на экране,
-      // раз три захода вслепую (измерение DOM, чтение CSS-переменной,
-      // чистая арифметика) дали один и тот же результат на скриншотах.
-      // Убрать после того, как найдём причину.
-      var dbg = document.getElementById('diffDebugInfo');
-      if (!dbg) {
-        dbg = document.createElement('div');
-        dbg.id = 'diffDebugInfo';
-        dbg.style.cssText = 'position:absolute;top:4px;left:4px;z-index:999;' +
-          'background:#f00;color:#fff;font:9px/1.35 monospace;padding:6px 8px;' +
-          'white-space:pre-wrap;border-radius:4px;max-width:96%;pointer-events:none';
-        viewport.style.position = 'relative';
-        viewport.appendChild(dbg);
-      }
-      dbg.textContent = 'vw=' + window.innerWidth +
-        ' vpClientW=' + viewport.clientWidth +
-        ' padX=' + padX.toFixed(1) +
-        ' shotW=' + shotW.toFixed(1) +
-        ' pageIdx=' + pageIndex +
-        ' padLeftCS=' + getComputedStyle(viewport).paddingLeft +
-        ' padRightCS=' + getComputedStyle(viewport).paddingRight + '\n' +
-        'vpRect=' + JSON.stringify(viewport.getBoundingClientRect()) + '\n' +
-        'sliderRect=' + JSON.stringify(document.querySelector('.diff__slider').getBoundingClientRect()) + '\n' +
-        'activeShotRect=' + (shots[pageIndex] ? JSON.stringify(shots[pageIndex].getBoundingClientRect()) : 'none') + '\n' +
-        'trackTransform=' + track.style.transform;
     }
 
     layout();
