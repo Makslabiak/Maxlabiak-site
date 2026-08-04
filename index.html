@@ -1339,15 +1339,24 @@ body.header-scrolled .site-header__actions {
 
   /* пункты инспектора: секции-карточки на мобильном идут во всю ширину
      экрана без скруглений и без внешнего отступа — но НЕ все. cta-strip
-     и diff (обе card-lime) попросили вернуть как было, поэтому из общего
-     правила они исключены и .frame--inset без паддинга применяется
-     точечно только к tools/process/brief, а не ко всем пяти сразу. */
+     (card-lime) попросили вернуть как было, поэтому из общего правила
+     она исключена и .frame--inset без паддинга применяется точечно к
+     tools/process/brief. diff (тоже card-lime) добавлен в тот же список
+     позже — тот же приём, что у tools/process: .frame--inset теряет
+     свой паддинг, а border-radius самой карточки снят точечно через
+     .diff (а не общим правилом на .card-lime, чтобы не задеть
+     соседний cta-strip). Внутренний паддинг карточки (--card-pad-x/-y,
+     см. .card-lime{padding:...}) никуда не делся — именно на нём и
+     держится выравнивание текста/кнопки от края экрана, спец. правки
+     под это не нужны. */
   .hero-section{padding:0}
   section:nth-of-type(4).frame--inset,
+  section:nth-of-type(6).frame--inset,
   section:nth-of-type(8).frame--inset,
   #brief.frame--inset,
   #quiz-pick.frame--inset{padding:0 0 var(--pad-y)}
   .card-dark{border-radius:0}
+  .diff{border-radius:0}
 
   /* .pack (тариф) и .faq__cta — вернули отступ и скругление как было,
      override больше не нужен, оставляем на дефолтных стилях .card /
