@@ -924,7 +924,8 @@ body.header-scrolled .site-header__actions {
            vertical-align:middle;flex-shrink:0;padding:0}
 .pack--hl .pack__tip{background:rgba(255,255,255,.15);color:rgba(255,255,255,.65)}
 .pack__tip::after{content:attr(data-tip);position:absolute;
-                   left:var(--tip-left,0);bottom:calc(100% + 9px);
+                   left:calc(50% + var(--tip-left,0px));bottom:calc(100% + 9px);
+                   transform:translateX(-50%);
                    width:min(270px,70vw);padding:12px 14px;border-radius:10px;
                    background:var(--color-dark);color:#fff;
                    font:400 14.5px/1.45 var(--font-text);text-align:left;
@@ -3106,12 +3107,12 @@ window.scrollLock = (function () {
   var tips = document.querySelectorAll('.pack__tip');
   if (!tips.length) return;
 
-  /* бабл (::after) позиционируется как left:0 от кнопки, то есть уходит
-     вправо на фиксированную ширину — рядом с правым краем экрана (почти
-     всегда на мобильном, где список пунктов в одну узкую колонку) он
-     вылезал за viewport. Псевдоэлементу нельзя выставить inline-стиль
-     напрямую, поэтому сдвигаем его через CSS-переменную --tip-left на
-     самой кнопке — единственный канал общения JS с ::after.
+  /* бабл (::after) центрирован на кнопке (left:50% + translateX(-50%)) —
+     рядом с краем экрана (почти всегда на мобильном, где список пунктов
+     в одну узкую колонку) он всё равно вылезал за viewport. Псевдоэлементу
+     нельзя выставить inline-стиль напрямую, поэтому сдвигаем его через
+     CSS-переменную --tip-left на самой кнопке — единственный канал
+     общения JS с ::after.
      margin — не просто отступ от края экрана, а отступ с запасом под
      box-shadow бабла (0 8px 24px): у body стоит overflow-x:clip, и без
      этого запаса саму тень подрезает прямо по границе вьюпорта. */
@@ -3120,13 +3121,15 @@ window.scrollLock = (function () {
     var bubbleWidth = parseFloat(getComputedStyle(tip, '::after').width) || 270;
     var rect = tip.getBoundingClientRect();
     var margin = 28;
-    var naturalRight = rect.left + bubbleWidth;
+    var center = rect.left + rect.width / 2; // естественный (нецентрованный сдвигом) центр бабла — центр самой кнопки
+    var naturalLeft = center - bubbleWidth / 2;
+    var naturalRight = center + bubbleWidth / 2;
     var shift = 0;
     if (naturalRight > window.innerWidth - margin) {
       shift = (window.innerWidth - margin) - naturalRight; // уводим влево
     }
-    if (rect.left + shift < margin) {
-      shift = margin - rect.left; // но не дальше левого края
+    if (naturalLeft + shift < margin) {
+      shift = margin - naturalLeft; // но не дальше левого края
     }
     if (shift) tip.style.setProperty('--tip-left', shift + 'px');
   }
