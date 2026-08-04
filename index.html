@@ -712,6 +712,9 @@ body.header-scrolled .site-header__actions {
    снизу компенсируется отрицательными margin. */
 .diff__slider{margin-top:calc(-1 * var(--card-pad-y));
               margin-bottom:calc(-1 * var(--card-pad-y))}
+/* мобильная разметка (.diffm) скрыта везде, кроме ≤720px — показывается
+   в мобильном @media, см. ниже по файлу */
+.diffm{display:none}
 .diff__viewport{height:clamp(380px,44vw,720px)}
 .diff__track{display:flex;flex-direction:column;will-change:transform}
 .diff__group{display:flex;flex-direction:column;gap:20px;padding-bottom:20px}
@@ -1463,8 +1466,7 @@ body.header-scrolled .site-header__actions {
      внутрь — активный слайд оказывается ровно в ширину контентной
      части (как на десктопе), а не всей подложки, и за счёт этого
      соседние слайды подглядывают из-под правого/левого краёв. */
-  .diff__slider{order:3;margin:-8px calc(-1 * var(--card-pad-x)) 0;
-                 width:calc(100% + 2 * var(--card-pad-x))}
+  .diff__slider { display: none; } /* мобильная версия — .diffm ниже, отдельная разметка */
   .diff__row{order:4;flex-direction:column;align-items:center;gap:12px;margin-top:28px;width:100%}
   /* по просьбе: весь .diff__row (кнопка + подпись) по центру.
      ВАЖНО: .diff (родитель) в мобильном режиме использует
@@ -1486,53 +1488,43 @@ body.header-scrolled .site-header__actions {
      виден как центровка блока целиком. */
   .diff__note{text-align:center;align-self:center}
 
-  /* пункт 6: лента конкурентов на мобильном — пошаговая карусель по
-     одному скриншоту на ширину контентной части (JS выставляет ширину
-     каждого .diff__shot в px через layout(), см. блок 3.6), а не
-     бегущая строка. Здесь только структура: горизонтальный ряд вместо
-     вертикального, высота — по контенту, gap между кадрами.
-     Отступ под "пик" соседних слайдов (padding-left/right) теперь
-     выставляет сам JS через inline-style (см. layout() в блоке 3.6) —
-     не через CSS, чтобы не зависеть от каскада логическое/физическое
-     свойство (padding-inline vs padding-left), с этим были расхождения
-     в мобильном Safari. */
-  /* Полностью переехали на нативный скролл со scroll-snap — тот же
-     приём, что уже стабильно работает у отзывов (.reviews) на этом
-     сайте. Раньше здесь было самописное решение (JS transform + клоны
-     для бесшовной петли + свои touch-обработчики) — это давало один
-     баг за другим на конкретных сборках мобильного Safari (flexbox gap
-     рендерился с ошибкой, см. историю правок). Браузерный scroll-snap
-     сам считает свайпы/инерцию/прилипание — надёжнее самописной
-     арифметики. padding-inline создаёт зону "пика" по бокам,
-     scroll-padding-inline — чтобы точки прилипания считались от
-     той же зоны, а не от края скролл-контейнера (иначе после
-     последнего слайда начало ленты уезжает на паддинг при заходе). */
-  .diff__viewport {
-    height: auto; overflow-x: auto; overflow-y: hidden;
+  /* .diffm — отдельная мобильная разметка ленты конкурентов (не
+     .diff__slider выше, тот скрыт). Одна плоская группа картинок без
+     дублей-клонов: нативный горизонтальный скролл со scroll-snap,
+     тот же приём, что у .reviews (блок 3.5 в скрипте) — браузер сам
+     считает свайп/инерцию/прилипание, JS нужен только для автопрокрутки.
+     order:3 — занимает то же место в потоке .diff, что и .diff__slider
+     на десктопе (после .diff__lead, перед .diff__row). */
+  .diffm {
+    order: 3; display: block; margin: -8px calc(-1 * var(--card-pad-x)) 0;
+    width: calc(100% + 2 * var(--card-pad-x));
+  }
+  /* .diffm__track — сам скролл-контейнер. Его ширина блочная (auto =
+     100% от .diffm, а у той ширина задана через calc() выше) — то есть
+     ДЕФИНИТНАЯ, не завязанная на контент. Поэтому у .diffm__shot ниже
+     процентная ширина считается однозначно, без JS: раньше ширину
+     слайда выставлял скрипт в px именно потому, что в старой вложенной
+     flex-структуре (.diff__viewport > .diff__track > .diff__group)
+     процент имел двусмысленный базис — тут его просто нет. */
+  .diffm__track {
+    display: flex; overflow-x: auto; overflow-y: hidden;
     scroll-snap-type: x mandatory; scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; -ms-overflow-style: none;
     padding-inline: var(--card-pad-x);
     scroll-padding-inline: var(--card-pad-x);
   }
-  .diff__viewport::-webkit-scrollbar { display: none; }
-  .diff__track { flex-direction: row; }
-  .diff__group { flex-direction: row; padding-right: 0; padding-bottom: 0; }
-  .diff__shot {
-    width: 100%; height: auto; flex-shrink: 0;
-    scroll-snap-align: center; margin-right: 12px;
+  .diffm__track::-webkit-scrollbar { display: none; }
+  .diffm__shot {
+    flex: 0 0 auto;
+    width: calc(100% - 2 * var(--card-pad-x));
+    margin-right: 12px;
+    scroll-snap-align: center;
+    display: block; height: auto; aspect-ratio: 3360/1940;
+    object-fit: cover; border-radius: 12px;
+    box-shadow: 0 18px 40px -24px rgba(0,0,0,.45);
   }
-  /* вторая .diff__group (aria-hidden, дубликат для бесшовной десктопной
-     вертикальной ленты) на мобильном не нужна — карусель здесь не едет
-     по кругу, а листается по шагам только внутри первой группы (JS,
-     блок 3.6). Без display:none дубль остаётся в общем flex-ряду сразу
-     за настоящими карточками — 6 лишних картинок без выставленной
-     JS-шириной ширины, именно они и ломали прокрутку. */
-  .diff__group[aria-hidden="true"] { display: none; }
-  /* точки пагинации были рассчитаны на позицию у правого края
-     вертикальной ленты — при горизонтальной ориентации это не тот
-     угол, прячем их, чтобы не висели криво в неправильном месте */
-  .diff__dots { display: none; }
+  .diffm__shot:last-child { margin-right: 0; }
 
   /* карточка отзыва почти во всю ширину — край следующей выглядывает
      и подсказывает, что ленту можно листать */
@@ -1942,6 +1934,21 @@ body.header-scrolled .site-header__actions {
         </div>
       </div>
       <div class="diff__dots" id="diffDots"></div>
+    </div>
+
+    <!-- Мобильная версия — полностью отдельная разметка, не переиспользует
+         десктопную .diff__slider (там дубль-группа под бесшовную вертикальную
+         ленту, лишняя сложность для простого горизонтального свайпа).
+         Скрыта на десктопе/планшете в CSS, показывается только ≤720px. -->
+    <div class="diffm" id="diffm">
+      <div class="diffm__track" id="diffmTrack">
+        <img class="diffm__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-01.webp" srcset="images/05-konkurenty/konkurent-01-sm.webp 700w, images/05-konkurenty/konkurent-01.webp 1600w" sizes="340px" alt="" loading="lazy" decoding="async">
+        <img class="diffm__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-02.webp" srcset="images/05-konkurenty/konkurent-02-sm.webp 700w, images/05-konkurenty/konkurent-02.webp 1600w" sizes="340px" alt="" loading="lazy" decoding="async">
+        <img class="diffm__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-03.webp" srcset="images/05-konkurenty/konkurent-03-sm.webp 700w, images/05-konkurenty/konkurent-03.webp 1600w" sizes="340px" alt="" loading="lazy" decoding="async">
+        <img class="diffm__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-04.webp" srcset="images/05-konkurenty/konkurent-04-sm.webp 700w, images/05-konkurenty/konkurent-04.webp 1600w" sizes="340px" alt="" loading="lazy" decoding="async">
+        <img class="diffm__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-05.webp" srcset="images/05-konkurenty/konkurent-05-sm.webp 700w, images/05-konkurenty/konkurent-05.webp 1600w" sizes="340px" alt="" loading="lazy" decoding="async">
+        <img class="diffm__shot" width="1600" height="924" src="images/05-konkurenty/konkurent-06.webp" srcset="images/05-konkurenty/konkurent-06-sm.webp 700w, images/05-konkurenty/konkurent-06.webp 1600w" sizes="340px" alt="" loading="lazy" decoding="async">
+      </div>
     </div>
   </div>
 </section>
@@ -2718,23 +2725,12 @@ window.scrollLock = (function () {
   }, true);
 })();
 
-/* ── 3.6. Лента конкурентов.
-   На десктопе — бесконечная лента (requestAnimationFrame, вертикальная,
-   translateY, измеряем высоту группы) — без изменений.
-   На мобильном (≤720px) — нативный горизонтальный скролл со
-   scroll-snap (тот же приём, что у .reviews в блоке 3.5 выше). Раньше
-   тут был самописный transform-карусель с клонами для бесшовной петли —
-   несколько заходов подряд ловили баги именно на реальных сборках
-   мобильного Safari (flexbox gap рендерился с ошибкой шириной и
-   позицией сразу — воспроизвести на другом браузере/эмуляторе не
-   получалось). Native scroll-snap избавляет от всей этой арифметики —
-   браузер сам считает свайп/инерцию/прилипание, JS только выставляет
-   ширину слайда и двигает автопрокрутку. Бесконечной петли здесь нет
-   (не критично для 6 карточек) — у последнего слайда автопрокрутка
-   просто возвращает в начало.
-   Точки пагинации (.diff__dots) на мобильном скрыты в CSS и здесь не
-   создаются — вторая .diff__group (дубликат для десктопной ленты)
-   тоже скрыта в CSS, в мобильной вёрстке не участвует. */
+/* ── 3.6. Лента конкурентов — десктопная версия (бесконечная лента,
+   requestAnimationFrame, вертикальная, translateY). Мобильная версия —
+   полностью отдельный блок (.diffm), см. ── 3.6m ниже: своя разметка,
+   свой IIFE, не пересекается с этим кодом вообще. Здесь просто выходим
+   на мобильном, чтобы не гонять бесконечный rAF-цикл на скрытом
+   (display:none) элементе. */
 (function () {
   var viewport = document.querySelector('.diff__viewport');
   var track = document.getElementById('diffTrack');
@@ -2743,49 +2739,9 @@ window.scrollLock = (function () {
   if (!viewport || !track || !group || !dotsBox) return;
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(max-width:720px)').matches) return;
 
-  var mobileQuery = window.matchMedia('(max-width:720px)');
   var count = group.querySelectorAll('.diff__shot').length;
-
-  if (mobileQuery.matches) {
-   try {
-    var shots = Array.prototype.slice.call(group.querySelectorAll('.diff__shot'));
-
-    function layout() {
-      // та же формула, что у CSS-переменной --card-pad-x:
-      // clamp(22px,4.4vw,55px) — см. :root. Если её значение поменяют
-      // в CSS, поменять надо и здесь.
-      var padX = Math.min(55, Math.max(22, window.innerWidth * 0.044));
-      viewport.style.paddingLeft = padX + 'px';
-      viewport.style.paddingRight = padX + 'px';
-      viewport.style.scrollPaddingLeft = padX + 'px';
-      viewport.style.scrollPaddingRight = padX + 'px';
-      var shotW = viewport.clientWidth - padX * 2;
-      shots.forEach(function (s) { s.style.width = shotW + 'px'; });
-    }
-
-    layout();
-    window.addEventListener('resize', layout);
-
-    // автопрокрутка: шаг вперёд каждые 4с на ширину слайда+отступ;
-    // у последнего слайда (дальше скроллить некуда) — назад в начало
-    setInterval(function () {
-      var atEnd = viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - 4;
-      if (atEnd) {
-        viewport.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        var step = shots[0].getBoundingClientRect().width + 12; // +margin-right из CSS
-        viewport.scrollBy({ left: step, behavior: 'smooth' });
-      }
-    }, 4000);
-   } catch (err) {
-    viewport.innerHTML = '<div style="background:#f00;color:#fff;font:12px/1.4 monospace;' +
-      'padding:10px;white-space:pre-wrap">DIFF CAROUSEL JS ERROR:\n' +
-      (err && (err.message || err)) + '</div>';
-   }
-
-    return; // непрерывный rAF-цикл ниже на мобильном не нужен
-  }
 
   var SECONDS_PER_GROUP = 30;   // за столько лента проходит одну группу
   var groupSize = 0, base = 0;
@@ -2855,6 +2811,33 @@ window.scrollLock = (function () {
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+})();
+
+/* ── 3.6m. Лента конкурентов — мобильная версия (.diffm, ≤720px).
+   Полностью отдельно от десктопного блока выше: своя плоская разметка
+   без клонов-дублей, нативный горизонтальный скролл со scroll-snap —
+   свайп, инерцию и прилипание к центру считает браузер (тот же приём,
+   что у .reviews, блок 3.5). Ширина слайда — чистый CSS calc()
+   (.diffm__shot{width:calc(100% - 2*var(--card-pad-x))}), JS вообще
+   не измеряет и не выставляет размеры — только двигает автопрокрутку. */
+(function () {
+  var track = document.getElementById('diffmTrack');
+  if (!track) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var GAP = 12; // тот же margin-right, что у .diffm__shot в CSS
+
+  setInterval(function () {
+    if (!window.matchMedia('(max-width:720px)').matches) return; // на десктопе .diffm скрыт, шевелить нечего
+    var shots = track.querySelectorAll('.diffm__shot');
+    if (!shots.length) return;
+    var atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    if (atEnd) {
+      track.scrollTo({ left: 0, behavior: 'smooth' });
+    } else {
+      track.scrollBy({ left: shots[0].getBoundingClientRect().width + GAP, behavior: 'smooth' });
+    }
+  }, 4000);
 })();
 
 /* ── 3.7. Отсчёт цифр в блоке «Кто делает» от нуля.
