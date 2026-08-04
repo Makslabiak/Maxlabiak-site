@@ -1496,16 +1496,32 @@ body.header-scrolled .site-header__actions {
      не через CSS, чтобы не зависеть от каскада логическое/физическое
      свойство (padding-inline vs padding-left), с этим были расхождения
      в мобильном Safari. */
-  .diff__viewport { height: auto; overflow: hidden; }
+  /* Полностью переехали на нативный скролл со scroll-snap — тот же
+     приём, что уже стабильно работает у отзывов (.reviews) на этом
+     сайте. Раньше здесь было самописное решение (JS transform + клоны
+     для бесшовной петли + свои touch-обработчики) — это давало один
+     баг за другим на конкретных сборках мобильного Safari (flexbox gap
+     рендерился с ошибкой, см. историю правок). Браузерный scroll-snap
+     сам считает свайпы/инерцию/прилипание — надёжнее самописной
+     арифметики. padding-inline создаёт зону "пика" по бокам,
+     scroll-padding-inline — чтобы точки прилипания считались от
+     той же зоны, а не от края скролл-контейнера (иначе после
+     последнего слайда начало ленты уезжает на паддинг при заходе). */
+  .diff__viewport {
+    height: auto; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; -ms-overflow-style: none;
+    padding-inline: var(--card-pad-x);
+    scroll-padding-inline: var(--card-pad-x);
+  }
+  .diff__viewport::-webkit-scrollbar { display: none; }
   .diff__track { flex-direction: row; }
-  /* gap здесь НЕ используется — на конкретной сборке мобильного Safari
-     flexbox gap на display:flex (не grid) даёт баг: карточка рендерится
-     у́же и сдвинута ровно на величину gap (подтверждено getBoundingClientRect
-     в проде). Интервал между слайдами задаёт margin-right на самих
-     .diff__shot через JS (см. layout() в блоке 3.6) — margin для этого
-     годами работает без сюрпризов в любом браузере. */
-  .diff__group { flex-direction: row; padding-right: 12px; padding-bottom: 0; }
-  .diff__shot { width: 100%; height: auto; flex-shrink: 0; }
+  .diff__group { flex-direction: row; padding-right: 0; padding-bottom: 0; }
+  .diff__shot {
+    width: 100%; height: auto; flex-shrink: 0;
+    scroll-snap-align: center; margin-right: 12px;
+  }
   /* вторая .diff__group (aria-hidden, дубликат для бесшовной десктопной
      вертикальной ленты) на мобильном не нужна — карусель здесь не едет
      по кругу, а листается по шагам только внутри первой группы (JS,
@@ -2705,18 +2721,20 @@ window.scrollLock = (function () {
 /* ── 3.6. Лента конкурентов.
    На десктопе — бесконечная лента (requestAnimationFrame, вертикальная,
    translateY, измеряем высоту группы) — без изменений.
-   На мобильном (≤720px) — та же механика, что и у слайдера инструментов
-   (пункт 5 инспектора выше): пошаговая карусель, но по ОДНОЙ карточке
-   на экран (ширина = ширина .diff__viewport, то есть контентной части
-   карточки), а не бегущая строка — непрерывный translateX на маленьком
-   экране полз только один скриншот в один момент времени, но с той же
-   px/сек, что и на десктопной вертикальной ленте, из-за чего выглядел
-   заметно медленнее (там за то же SECONDS_PER_GROUP успевает
-   прокрутиться высота 6 скриншотов, а тут при ширине экрана в разы
-   меньше высоты — и путь короче, и совпадение с ощущением «медленно»).
+   На мобильном (≤720px) — нативный горизонтальный скролл со
+   scroll-snap (тот же приём, что у .reviews в блоке 3.5 выше). Раньше
+   тут был самописный transform-карусель с клонами для бесшовной петли —
+   несколько заходов подряд ловили баги именно на реальных сборках
+   мобильного Safari (flexbox gap рендерился с ошибкой шириной и
+   позицией сразу — воспроизвести на другом браузере/эмуляторе не
+   получалось). Native scroll-snap избавляет от всей этой арифметики —
+   браузер сам считает свайп/инерцию/прилипание, JS только выставляет
+   ширину слайда и двигает автопрокрутку. Бесконечной петли здесь нет
+   (не критично для 6 карточек) — у последнего слайда автопрокрутка
+   просто возвращает в начало.
    Точки пагинации (.diff__dots) на мобильном скрыты в CSS и здесь не
-   создаются — карусель работает только на карточках первой группы,
-   дубль для бесшовной ленты в этом режиме не нужен. */
+   создаются — вторая .diff__group (дубликат для десктопной ленты)
+   тоже скрыта в CSS, в мобильной вёрстке не участвует. */
 (function () {
   var viewport = document.querySelector('.diff__viewport');
   var track = document.getElementById('diffTrack');
@@ -2730,105 +2748,36 @@ window.scrollLock = (function () {
   var count = group.querySelectorAll('.diff__shot').length;
 
   if (mobileQuery.matches) {
-   try { // на случай непредвиденной ошибки на конкретном устройстве —
-         // лучше молча остаться без карусели (JS error виден в консоли),
-         // чем уронить остальной скрипт после этого блока
-    // ИСПРАВЛЕНО (было два бага):
-    // 1) translateX считался как pageIndex*shotW без учёта gap:12px
-    //    между кадрами (.diff__group{gap:12px} в мобильном CSS) —
-    //    каждый шаг сдвигал ленту на 12px меньше, чем нужно, смещение
-    //    копилось от кадра к кадру ("листается неравномерно").
-    // 2) переход с последнего кадра на первый шёл через % без клонов —
-    //    transition:none жёстко на этом одном переходе из шести, пока
-    //    остальные пять ехали плавно (видимый скачок раз за цикл).
-    //    Ровно та же проблема, что чинили у слайдера инструментов
-    //    (см. блок 3 выше) — клоны-сентинелы туда, а сюда фикс
-    //    не перенесли. Переносим ту же схему: клонируем первый кадр
-    //    в конец и последний в начало, едем через сентинел как через
-    //    обычный шаг, а долетев — беззвучно телепортируемся на
-    //    настоящий кадр в той же позиции (клон пиксель-в-пиксель
-    //    совпадает с оригиналом, скачка не видно).
-    var gap = 12; // тот же gap, что у .diff__group на мобильном в CSS
-    var realShots = Array.prototype.slice.call(group.querySelectorAll('.diff__shot'));
-
-    var firstClone = realShots[0].cloneNode(true);
-    var lastClone = realShots[count - 1].cloneNode(true);
-    firstClone.setAttribute('aria-hidden', 'true');
-    lastClone.setAttribute('aria-hidden', 'true');
-    group.appendChild(firstClone);
-    group.insertBefore(lastClone, realShots[0]);
-
-    // теперь: [0]=клон последнего, [1..count]=настоящие, [count+1]=клон первого
+   try {
     var shots = Array.prototype.slice.call(group.querySelectorAll('.diff__shot'));
-    var pageIndex = 1;
-    var shotW = 0;
-    var isAnimating = false;
-
-    function move(animate) {
-      track.style.transition = animate ? 'transform .5s ease' : 'none';
-      track.style.transform = 'translateX(' + (-pageIndex * (shotW + gap)) + 'px)';
-      isAnimating = animate;
-    }
-
-    function goTo(index) {
-      if (isAnimating) return;
-      pageIndex = index;
-      move(true);
-    }
-
-    // доехали до сентинела — беззвучно телепортируемся на настоящий
-    // кадр в той же позиции (см. тот же приём в блоке 3)
-    track.addEventListener('transitionend', function () {
-      isAnimating = false;
-      if (pageIndex === shots.length - 1) { pageIndex = 1; move(false); }
-      else if (pageIndex === 0) { pageIndex = count; move(false); }
-    });
 
     function layout() {
-      // Два предыдущих захода полагались на измерение через DOM/CSS
-      // (getComputedStyle у padding-inline, потом ширина .diff__row) —
-      // в мобильном Safari результат всё равно расходился по бокам
-      // (см. скриншот: слева 0, справа большой пик), то есть где-то
-      // в cascade/display:contents эти пути дают разные числа на разных
-      // движках. Убираем DOM-измерение совсем: считаем padX той же
-      // формулой, что и CSS-переменная --card-pad-x: clamp(22px,4.4vw,55px)
-      // (см. :root выше) — если её значение когда-нибудь поменяют в CSS,
-      // поменять надо и здесь. Один и тот же padX уходит в left и right,
-      // так что развести их по разным числам физически не может ни один
-      // движок — это уже не вопрос cascade, а простая арифметика.
+      // та же формула, что у CSS-переменной --card-pad-x:
+      // clamp(22px,4.4vw,55px) — см. :root. Если её значение поменяют
+      // в CSS, поменять надо и здесь.
       var padX = Math.min(55, Math.max(22, window.innerWidth * 0.044));
       viewport.style.paddingLeft = padX + 'px';
       viewport.style.paddingRight = padX + 'px';
-      shotW = viewport.clientWidth - padX * 2;
-      shots.forEach(function (s) {
-        s.style.width = shotW + 'px';
-        s.style.marginRight = gap + 'px'; // замена CSS gap (см. комментарий в CSS выше)
-      });
-      move(false);
+      viewport.style.scrollPaddingLeft = padX + 'px';
+      viewport.style.scrollPaddingRight = padX + 'px';
+      var shotW = viewport.clientWidth - padX * 2;
+      shots.forEach(function (s) { s.style.width = shotW + 'px'; });
     }
 
     layout();
     window.addEventListener('resize', layout);
 
-    // свайп: тот же приём, что у слайдера инструментов (блок 3) —
-    // горизонтальная дистанция между touchstart/touchend, порог 40px
-    // и проверка dx>dy отсекают короткие/вертикальные касания (обычный
-    // скролл страницы), чтобы свайп не срабатывал случайно
-    var touchX = 0, touchY = 0;
-    viewport.addEventListener('touchstart', function (e) {
-      touchX = e.touches[0].clientX;
-      touchY = e.touches[0].clientY;
-    }, { passive: true });
-    viewport.addEventListener('touchend', function (e) {
-      var dx = e.changedTouches[0].clientX - touchX;
-      var dy = e.changedTouches[0].clientY - touchY;
-      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-      goTo(dx < 0 ? pageIndex + 1 : pageIndex - 1);
-    }, { passive: true });
-
-    // защёлка isAnimating внутри goTo не даёт автосвайпу вызвать
-    // следующий шаг, пока текущий переход ещё едет
-    setInterval(function () { goTo(pageIndex + 1); }, 4000);
+    // автопрокрутка: шаг вперёд каждые 4с на ширину слайда+отступ;
+    // у последнего слайда (дальше скроллить некуда) — назад в начало
+    setInterval(function () {
+      var atEnd = viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - 4;
+      if (atEnd) {
+        viewport.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        var step = shots[0].getBoundingClientRect().width + 12; // +margin-right из CSS
+        viewport.scrollBy({ left: step, behavior: 'smooth' });
+      }
+    }, 4000);
    } catch (err) {
     viewport.innerHTML = '<div style="background:#f00;color:#fff;font:12px/1.4 monospace;' +
       'padding:10px;white-space:pre-wrap">DIFF CAROUSEL JS ERROR:\n' +
