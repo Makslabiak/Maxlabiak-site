@@ -1490,13 +1490,13 @@ body.header-scrolled .site-header__actions {
      одному скриншоту на ширину контентной части (JS выставляет ширину
      каждого .diff__shot в px через layout(), см. блок 3.6), а не
      бегущая строка. Здесь только структура: горизонтальный ряд вместо
-     вертикального, высота — по контенту, gap между кадрами. */
-  /* padding-inline возвращает контейнеру ровно тот паддинг, на который
-     .diff__slider выше вышел в bleed — активная (видимая без обрезки)
-     зона внутри становится равна ширине контентной части, а сам слайд
-     (JS выставляет его ширину равной этой зоне, см. layout() в блоке 3.6)
-     подглядывающими соседями упирается прямо в паддинг с обеих сторон. */
-  .diff__viewport { height: auto; overflow: hidden; padding-inline: var(--card-pad-x); }
+     вертикального, высота — по контенту, gap между кадрами.
+     Отступ под "пик" соседних слайдов (padding-left/right) теперь
+     выставляет сам JS через inline-style (см. layout() в блоке 3.6) —
+     не через CSS, чтобы не зависеть от каскада логическое/физическое
+     свойство (padding-inline vs padding-left), с этим были расхождения
+     в мобильном Safari. */
+  .diff__viewport { height: auto; overflow: hidden; }
   .diff__track { flex-direction: row; }
   .diff__group { flex-direction: row; gap: 12px; padding-right: 12px; padding-bottom: 0; }
   .diff__shot { width: 100%; height: auto; flex-shrink: 0; }
@@ -2776,22 +2776,21 @@ window.scrollLock = (function () {
     });
 
     function layout() {
-      // Раньше отступ под "пик" соседних слайдов брался из CSS
-      // (padding-inline: var(--card-pad-x) у .diff__viewport) — держалось
-      // на том, что то же значение переменной совпадёт день в день с
-      // шириной, на которую .diff__slider выше вышел в bleed. Совпадение
-      // есть теоретически, но слайд из-за этого мог оказаться не по
-      // центру при любом маленьком расхождении. Теперь считаем без
-      // допущений: ширина слайда = реальная ширина .diff__row (та же
-      // контентная колонка, что и у заголовка/кнопки), отступ с каждой
-      // стороны — что осталось от ширины окна сверх неё. Выставляем
-      // padding самим JS, CSS-переменная тут больше не участвует.
-      var refEl = document.querySelector('.diff__row');
-      var refWidth = refEl ? refEl.getBoundingClientRect().width : viewport.clientWidth;
-      var padX = Math.max(0, (viewport.clientWidth - refWidth) / 2);
+      // Два предыдущих захода полагались на измерение через DOM/CSS
+      // (getComputedStyle у padding-inline, потом ширина .diff__row) —
+      // в мобильном Safari результат всё равно расходился по бокам
+      // (см. скриншот: слева 0, справа большой пик), то есть где-то
+      // в cascade/display:contents эти пути дают разные числа на разных
+      // движках. Убираем DOM-измерение совсем: считаем padX той же
+      // формулой, что и CSS-переменная --card-pad-x: clamp(22px,4.4vw,55px)
+      // (см. :root выше) — если её значение когда-нибудь поменяют в CSS,
+      // поменять надо и здесь. Один и тот же padX уходит в left и right,
+      // так что развести их по разным числам физически не может ни один
+      // движок — это уже не вопрос cascade, а простая арифметика.
+      var padX = Math.min(55, Math.max(22, window.innerWidth * 0.044));
       viewport.style.paddingLeft = padX + 'px';
       viewport.style.paddingRight = padX + 'px';
-      shotW = refWidth;
+      shotW = viewport.clientWidth - padX * 2;
       shots.forEach(function (s) { s.style.width = shotW + 'px'; });
       move(false);
     }
