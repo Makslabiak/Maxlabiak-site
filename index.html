@@ -2796,6 +2796,16 @@ window.scrollLock = (function () {
       shots.forEach(function (s) { s.style.width = shotW + 'px'; });
       move(false);
 
+      // ВРЕМЕННО: рамки прямо на элементах — синяя вокруг viewport
+      // (граница обрезки), пурпурная вокруг реально активного слайда.
+      // Цифры в бейдже совпадают с ожиданием, но на глаз результат
+      // всё равно не по центру — нужно увидеть границы, а не верить
+      // цифрам на слово.
+      viewport.style.outline = '3px solid #0066ff';
+      viewport.style.outlineOffset = '-3px';
+      shots.forEach(function (s) { s.style.outline = 'none'; });
+      if (shots[pageIndex]) shots[pageIndex].style.outline = '4px solid #ff00ff';
+
       // ВРЕМЕННЫЙ отладочный вывод — реальные цифры прямо на экране,
       // раз три захода вслепую (измерение DOM, чтение CSS-переменной,
       // чистая арифметика) дали один и тот же результат на скриншотах.
