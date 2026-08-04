@@ -1447,7 +1447,15 @@ body.header-scrolled .site-header__actions {
   .diff__text{display:contents}
   .diff__title{order:1}
   .diff__lead{order:2;max-width:530px}
-  .diff__slider{order:3;margin:-8px 0 0;width:100%}
+  /* контейнер ленты растянут на всю ширину зелёной подложки (bleed,
+     тот же приём что у вертикальной десктопной версии, только теперь
+     горизонтально) — margin-inline на -card-pad-x компенсирует паддинг
+     карточки. Сам .diff__viewport ниже возвращает столько же паддинга
+     внутрь — активный слайд оказывается ровно в ширину контентной
+     части (как на десктопе), а не всей подложки, и за счёт этого
+     соседние слайды подглядывают из-под правого/левого краёв. */
+  .diff__slider{order:3;margin:-8px calc(-1 * var(--card-pad-x)) 0;
+                 width:calc(100% + 2 * var(--card-pad-x))}
   .diff__row{order:4;flex-direction:column;align-items:center;gap:12px;margin-top:28px;width:100%}
   /* по просьбе: весь .diff__row (кнопка + подпись) по центру.
      ВАЖНО: .diff (родитель) в мобильном режиме использует
@@ -1474,7 +1482,12 @@ body.header-scrolled .site-header__actions {
      каждого .diff__shot в px через layout(), см. блок 3.6), а не
      бегущая строка. Здесь только структура: горизонтальный ряд вместо
      вертикального, высота — по контенту, gap между кадрами. */
-  .diff__viewport { height: auto; overflow: hidden; }
+  /* padding-inline возвращает контейнеру ровно тот паддинг, на который
+     .diff__slider выше вышел в bleed — активная (видимая без обрезки)
+     зона внутри становится равна ширине контентной части, а сам слайд
+     (JS выставляет его ширину равной этой зоне, см. layout() в блоке 3.6)
+     подглядывающими соседями упирается прямо в паддинг с обеих сторон. */
+  .diff__viewport { height: auto; overflow: hidden; padding-inline: var(--card-pad-x); }
   .diff__track { flex-direction: row; }
   .diff__group { flex-direction: row; gap: 12px; padding-right: 12px; padding-bottom: 0; }
   .diff__shot { width: 100%; height: auto; flex-shrink: 0; }
@@ -2754,7 +2767,12 @@ window.scrollLock = (function () {
     });
 
     function layout() {
-      shotW = viewport.clientWidth;
+      // clientWidth включает padding-inline (--card-pad-x, зона "пика"
+      // соседних слайдов) — вычитаем его, иначе активный слайд занимал
+      // бы всю ширину подложки вместе с зоной пика, а не только контентную
+      // часть, и подглядывающих соседей не было бы видно вообще.
+      var padX = parseFloat(getComputedStyle(viewport).paddingLeft) || 0;
+      shotW = viewport.clientWidth - padX * 2;
       shots.forEach(function (s) { s.style.width = shotW + 'px'; });
       move(false);
     }
