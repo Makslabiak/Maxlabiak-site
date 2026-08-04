@@ -1498,7 +1498,13 @@ body.header-scrolled .site-header__actions {
      в мобильном Safari. */
   .diff__viewport { height: auto; overflow: hidden; }
   .diff__track { flex-direction: row; }
-  .diff__group { flex-direction: row; gap: 12px; padding-right: 12px; padding-bottom: 0; }
+  /* gap здесь НЕ используется — на конкретной сборке мобильного Safari
+     flexbox gap на display:flex (не grid) даёт баг: карточка рендерится
+     у́же и сдвинута ровно на величину gap (подтверждено getBoundingClientRect
+     в проде). Интервал между слайдами задаёт margin-right на самих
+     .diff__shot через JS (см. layout() в блоке 3.6) — margin для этого
+     годами работает без сюрпризов в любом браузере. */
+  .diff__group { flex-direction: row; padding-right: 12px; padding-bottom: 0; }
   .diff__shot { width: 100%; height: auto; flex-shrink: 0; }
   /* вторая .diff__group (aria-hidden, дубликат для бесшовной десктопной
      вертикальной ленты) на мобильном не нужна — карусель здесь не едет
@@ -2793,7 +2799,10 @@ window.scrollLock = (function () {
       viewport.style.paddingLeft = padX + 'px';
       viewport.style.paddingRight = padX + 'px';
       shotW = viewport.clientWidth - padX * 2;
-      shots.forEach(function (s) { s.style.width = shotW + 'px'; });
+      shots.forEach(function (s) {
+        s.style.width = shotW + 'px';
+        s.style.marginRight = gap + 'px'; // замена CSS gap (см. комментарий в CSS выше)
+      });
       move(false);
 
       // ВРЕМЕННО: рамки прямо на элементах — синяя вокруг viewport
